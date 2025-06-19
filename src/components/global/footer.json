@@ -1,0 +1,27 @@
+{
+  "collectionName": "components_global_footers",
+  "info": {
+    "displayName": "Footer",
+    "icon": "bulletList"
+  },
+  "options": {},
+  "attributes": {
+    "description": {
+      "type": "richtext"
+    },
+    "copyright": {
+      "type": "string"
+    },
+    "internal_links": {
+      "type": "component",
+      "component": "shared.link",
+      "repeatable": true
+    },
+    "social_media_links": {
+      "type": "component",
+      "component": "shared.link",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}

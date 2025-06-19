@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_global_navbars",
+  "info": {
+    "displayName": "Navbar",
+    "icon": "bulletList"
+  },
+  "options": {},
+  "attributes": {
+    "logo": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::logo.logo"
+    },
+    "left_navbar_items": {
+      "type": "component",
+      "component": "shared.link",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}

@@ -1,0 +1,5 @@
+/**
+ * jadwalshalat service
+ */
+
+export default () => ({});
