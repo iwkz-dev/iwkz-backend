@@ -10,10 +10,22 @@ services:
             MYSQL_DATABASE: ${DATABASE_NAME}
             MYSQL_USER: ${DATABASE_USERNAME}
             MYSQL_PASSWORD: ${DATABASE_PASSWORD}
+            MYSQL_TCP_PORT: ${DATABASE_PORT}
         volumes:
             - strapi-data:/var/lib/mysql
         ports:
             - '3306:3306'
+        networks:
+            - strapi-net
+    phpmyadmin:
+        image: phpmyadmin
+        restart: always
+        depends_on:
+            - mysql
+        ports:
+            - 8080:80
+        environment:
+            - PMA_ARBITRARY=1
         networks:
             - strapi-net
 
