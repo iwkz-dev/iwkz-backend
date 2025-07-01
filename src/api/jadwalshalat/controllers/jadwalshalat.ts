@@ -2,7 +2,7 @@
  * A set of functions called "actions" for `jadwalshalat`
  */
 
-import fetch from 'node-fetch';
+import axios from 'axios';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -85,9 +85,8 @@ async function getHijriahDatesByMonth(
 
     let apiResponse: IslamicFinderApiResponse;
     try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error(`API error: ${response.statusText}`);
-        apiResponse = (await response.json()) as IslamicFinderApiResponse;
+        const response = await axios.get(apiUrl);
+        apiResponse = (await response.data) as IslamicFinderApiResponse;
     } catch (error) {
         console.error('Gagal mengambil data dari API IslamicFinder:', error);
         return apiResponse;
@@ -176,15 +175,13 @@ async function getPrayingTime(
     let apiResponse: NocoDBPrayingTimeResponse;
 
     try {
-        const response = await fetch(apiURL, {
-            method: 'GET',
+        const response = await axios.get(apiURL, {
             headers: {
                 accept: 'application/json',
                 'xc-token': process.env.JADWAL_SHALAT_NOCODB_API_TOKEN,
             },
         });
-        if (!response.ok) throw new Error(`API error: ${response.statusText}`);
-        apiResponse = (await response.json()) as NocoDBPrayingTimeResponse;
+        apiResponse = (await response.data) as NocoDBPrayingTimeResponse;
     } catch (error) {
         console.error('Gagal mengambil data dari API IslamicFinder:', error);
 
