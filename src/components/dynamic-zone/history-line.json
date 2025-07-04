@@ -1,0 +1,26 @@
+{
+  "collectionName": "components_dynamic_zone_history_lines",
+  "info": {
+    "displayName": "HistoryLine"
+  },
+  "options": {},
+  "attributes": {
+    "year": {
+      "type": "string"
+    },
+    "headline": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ]
+    }
+  },
+  "config": {}
+}
