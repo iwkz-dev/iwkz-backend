@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_dynamic_zone_activities",
+  "info": {
+    "displayName": "Activity"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "contactPerson": {
+      "type": "string"
+    }
+  },
+  "config": {}
+}

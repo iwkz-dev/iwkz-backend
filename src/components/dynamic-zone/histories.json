@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_dynamic_zone_histories",
+  "info": {
+    "displayName": "Histories"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string"
+    },
+    "historyLine": {
+      "type": "component",
+      "component": "dynamic-zone.history-line",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}
