@@ -8,8 +8,8 @@
     "title": {
       "type": "string"
     },
-    "description": {
-      "type": "string"
+    "content": {
+      "type": "text"
     },
     "url": {
       "type": "string"

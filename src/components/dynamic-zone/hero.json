@@ -9,7 +9,7 @@
       "type": "string"
     },
     "subHeadline": {
-      "type": "string"
+      "type": "text"
     },
     "image": {
       "type": "media",

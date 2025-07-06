@@ -7,7 +7,7 @@ export interface DynamicZoneActivity extends Struct.ComponentSchema {
   };
   attributes: {
     contactPerson: Schema.Attribute.String;
-    description: Schema.Attribute.Text;
+    content: Schema.Attribute.Text;
     title: Schema.Attribute.String;
   };
 }
@@ -19,7 +19,7 @@ export interface DynamicZoneActivityCategory extends Struct.ComponentSchema {
   };
   attributes: {
     Activities: Schema.Attribute.Component<'dynamic-zone.activity', true>;
-    description: Schema.Attribute.String;
+    content: Schema.Attribute.Text;
     image: Schema.Attribute.Media<'images', true>;
     title: Schema.Attribute.String;
     url: Schema.Attribute.String;
@@ -35,7 +35,7 @@ export interface DynamicZoneHero extends Struct.ComponentSchema {
     headline: Schema.Attribute.String;
     image: Schema.Attribute.Media<'images'>;
     link: Schema.Attribute.Component<'shared.link', true>;
-    subHeadline: Schema.Attribute.String;
+    subHeadline: Schema.Attribute.Text;
   };
 }
 
@@ -45,7 +45,7 @@ export interface DynamicZoneHistories extends Struct.ComponentSchema {
     displayName: 'Histories';
   };
   attributes: {
-    content: Schema.Attribute.String;
+    content: Schema.Attribute.Text;
     historyLine: Schema.Attribute.Component<'dynamic-zone.history-line', true>;
     title: Schema.Attribute.String;
   };
@@ -57,7 +57,7 @@ export interface DynamicZoneHistoryLine extends Struct.ComponentSchema {
     displayName: 'HistoryLine';
   };
   attributes: {
-    content: Schema.Attribute.String;
+    content: Schema.Attribute.Text;
     headline: Schema.Attribute.String;
     image: Schema.Attribute.Media<'images'>;
     year: Schema.Attribute.String;

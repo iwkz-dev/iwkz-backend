@@ -12,7 +12,7 @@
       "type": "string"
     },
     "content": {
-      "type": "string"
+      "type": "text"
     },
     "image": {
       "type": "media",
