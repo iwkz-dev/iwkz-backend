@@ -9,7 +9,7 @@
       "type": "string"
     },
     "content": {
-      "type": "string"
+      "type": "text"
     },
     "historyLine": {
       "type": "component",
