@@ -461,6 +461,10 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
         'dynamic-zone.hero',
         'dynamic-zone.activity-category',
         'dynamic-zone.histories',
+        'dynamic-zone.testimonials',
+        'dynamic-zone.history-line',
+        'dynamic-zone.activity',
+        'dynamic-zone.activity-category-section',
       ]
     > &
       Schema.Attribute.SetPluginOptions<{
@@ -482,6 +486,74 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
       }>;
     slug: Schema.Attribute.UID &
       Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPrsDonationProgressPrsDonationProgress
+  extends Struct.SingleTypeSchema {
+  collectionName: 'prs_donation_progresses';
+  info: {
+    displayName: 'PRSDonationProgress';
+    pluralName: 'prs-donation-progresses';
+    singularName: 'prs-donation-progress';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currentDonation: Schema.Attribute.Decimal &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    headline: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    image: Schema.Attribute.Media<'images'> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    link: Schema.Attribute.Component<'shared.link', true> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::prs-donation-progress.prs-donation-progress'
+    >;
+    publishedAt: Schema.Attribute.DateTime;
+    subHeadline: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    targetDonation: Schema.Attribute.Decimal &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: true;
@@ -1005,6 +1077,7 @@ declare module '@strapi/strapi' {
       'api::global.global': ApiGlobalGlobal;
       'api::logo.logo': ApiLogoLogo;
       'api::page.page': ApiPagePage;
+      'api::prs-donation-progress.prs-donation-progress': ApiPrsDonationProgressPrsDonationProgress;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

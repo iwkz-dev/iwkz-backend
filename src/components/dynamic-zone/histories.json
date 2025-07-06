@@ -1,14 +1,14 @@
 {
   "collectionName": "components_dynamic_zone_histories",
   "info": {
-    "displayName": "Histories"
+    "displayName": "HistoriesSection"
   },
   "options": {},
   "attributes": {
-    "title": {
+    "headline": {
       "type": "string"
     },
-    "content": {
+    "subHeadline": {
       "type": "text"
     },
     "historyLine": {

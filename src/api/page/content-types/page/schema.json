@@ -34,7 +34,11 @@
       "components": [
         "dynamic-zone.hero",
         "dynamic-zone.activity-category",
-        "dynamic-zone.histories"
+        "dynamic-zone.histories",
+        "dynamic-zone.testimonials",
+        "dynamic-zone.history-line",
+        "dynamic-zone.activity",
+        "dynamic-zone.activity-category-section"
       ]
     },
     "seo": {
