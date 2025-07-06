@@ -14,4 +14,25 @@ export default ({ env }) => ({
             },
         },
     },
+    email: {
+        config: {
+            provider: 'nodemailer',
+            providerOptions: {
+                host: env('NODEMAILER_GMAIL_HOST'),
+                port: env('NODEMAILER_GMAIL_PORT'),
+                secure: env('NODEMAILER_GMAIL_SECURE'),
+                auth: {
+                    type: 'OAuth2',
+                    user: env('NODEMAILER_GMAIL_OAUTH_USER'),
+                    clientId: env('NODEMAILER_GMAIL_OAUTH_CLIENT_ID'),
+                    clientSecret: env('NODEMAILER_GMAIL_OAUTH_CLIENT_SECRET'),
+                    refreshToken: env('NODEMAILER_GMAIL_OAUTH_REFRESH_TOKEN'),
+                },
+            },
+            settings: {
+                defaultFrom: `IWKZ Admin <${env('NODEMAILER_GMAIL_OAUTH_USER')}>`,
+                defaultReplyTo: env('NODEMAILER_GMAIL_OAUTH_USER'),
+            },
+        },
+    },
 });
