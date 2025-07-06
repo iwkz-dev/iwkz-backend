@@ -26,6 +26,22 @@ export interface DynamicZoneActivityCategory extends Struct.ComponentSchema {
   };
 }
 
+export interface DynamicZoneActivityCategorySection
+  extends Struct.ComponentSchema {
+  collectionName: 'components_dynamic_zone_activity_category_sections';
+  info: {
+    displayName: 'ActivityCategorySection';
+  };
+  attributes: {
+    ActivityCategory: Schema.Attribute.Component<
+      'dynamic-zone.activity-category',
+      true
+    >;
+    headline: Schema.Attribute.String;
+    subHeadline: Schema.Attribute.String;
+  };
+}
+
 export interface DynamicZoneHero extends Struct.ComponentSchema {
   collectionName: 'components_dynamic_zone_heroes';
   info: {
@@ -42,12 +58,12 @@ export interface DynamicZoneHero extends Struct.ComponentSchema {
 export interface DynamicZoneHistories extends Struct.ComponentSchema {
   collectionName: 'components_dynamic_zone_histories';
   info: {
-    displayName: 'Histories';
+    displayName: 'HistoriesSection';
   };
   attributes: {
-    content: Schema.Attribute.Text;
+    headline: Schema.Attribute.String;
     historyLine: Schema.Attribute.Component<'dynamic-zone.history-line', true>;
-    title: Schema.Attribute.String;
+    subHeadline: Schema.Attribute.Text;
   };
 }
 
@@ -136,6 +152,7 @@ declare module '@strapi/strapi' {
     export interface ComponentSchemas {
       'dynamic-zone.activity': DynamicZoneActivity;
       'dynamic-zone.activity-category': DynamicZoneActivityCategory;
+      'dynamic-zone.activity-category-section': DynamicZoneActivityCategorySection;
       'dynamic-zone.hero': DynamicZoneHero;
       'dynamic-zone.histories': DynamicZoneHistories;
       'dynamic-zone.history-line': DynamicZoneHistoryLine;

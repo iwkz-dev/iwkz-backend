@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_dynamic_zone_activity_category_sections",
+  "info": {
+    "displayName": "ActivityCategorySection"
+  },
+  "options": {},
+  "attributes": {
+    "headline": {
+      "type": "string"
+    },
+    "subHeadline": {
+      "type": "string"
+    },
+    "ActivityCategory": {
+      "type": "component",
+      "component": "dynamic-zone.activity-category",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}
