@@ -9,6 +9,7 @@ export default [
     'strapi::session',
     'strapi::favicon',
     'strapi::public',
+    'global::deepPopulate',
     {
         name: 'strapi::security',
         config: {
