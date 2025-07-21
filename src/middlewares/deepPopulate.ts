@@ -14,6 +14,10 @@ interface Options {
     relationalFields?: string[];
 }
 
+const EXCLUDED_URLS = [
+    '/api/jadwalshalat', //
+    '/api/financereport/prs', //
+];
 const { CREATED_BY_ATTRIBUTE, UPDATED_BY_ATTRIBUTE } = contentTypes.constants;
 
 const extractPathSegment = (url: string) =>
@@ -91,12 +95,12 @@ const getDeepPopulate = (uid: UID.Schema, opts: Options = {}) => {
 
 export default (config, { strapi }: { strapi: Core.Strapi }) => {
     return async (ctx, next) => {
-        if (
+        const shouldProcess =
             ctx.request.url.startsWith('/api/') &&
             ctx.request.method === 'GET' &&
             !ctx.query.populate &&
-            !ctx.request.url.includes('/api/jadwalshalat')
-        ) {
+            !EXCLUDED_URLS.some((url) => ctx.request.url.includes(url));
+        if (shouldProcess) {
             strapi.log.info(
                 'Using custom Dynamic-Zone population Middleware...'
             );
