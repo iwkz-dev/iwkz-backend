@@ -5,6 +5,19 @@ export type DBFinanceDataResponse = {
     };
 };
 
+export type DBFinanceLedgerResponse = {
+    list: DBFinanceData[];
+    pageInfo: {
+        isLastPage: boolean;
+    };
+};
+
+export type DBLedgerData = {
+    ledger_id: number;
+    label: string;
+    description: string;
+};
+
 export type DBFinanceData = {
     year: number;
     month: number;
@@ -22,7 +35,12 @@ export type FinanceDataApiResponse = {
 
 export type FinanceMonthlyData = {
     month: number;
-    ledgerData: FinanceLedgerData[];
+    [FinanceCashFlowType.INFLOW]: {
+        ledgerData: FinanceLedgerData[];
+    };
+    [FinanceCashFlowType.OUTFLOW]: {
+        ledgerData: FinanceLedgerData[];
+    };
 };
 
 export type FinanceLedgerData = {
@@ -33,4 +51,9 @@ export type FinanceLedgerData = {
 export enum FinanceReportType {
     PRS = 'PRS',
     OPERASIONAL = 'OPERASIONAL',
+}
+
+export enum FinanceCashFlowType {
+    INFLOW = 'inflow',
+    OUTFLOW = 'outflow',
 }

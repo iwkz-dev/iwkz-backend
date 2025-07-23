@@ -17,6 +17,8 @@ interface Options {
 const EXCLUDED_URLS = [
     '/api/jadwalshalat', //
     '/api/financereport/prs', //
+    '/api/financereport/operational', //
+    '/api/financereport/ledger', //
 ];
 const { CREATED_BY_ATTRIBUTE, UPDATED_BY_ATTRIBUTE } = contentTypes.constants;
 
