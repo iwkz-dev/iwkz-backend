@@ -9,13 +9,18 @@ import {
     FinanceDataApiResponse,
     FinanceMonthlyData,
     FinanceCashFlowType,
+    FinanceSummaryApiResponse,
+    FinanceMonthlySummary,
     DBLedgerData,
+    DBFinanceCashFlow,
+    DBFinanceClosingBalance,
 } from '../controllers/types';
 
 const API_URL = `${process.env.IWKZ_NOCODB_API}/`;
+const DEFAULT_DATA_LIMIT = 'limit=1000';
 
 const getLedger = async (): Promise<DBLedgerData[]> => {
-    const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_KEUANGAN_LEDGER}/records?limit=1000`;
+    const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_KEUANGAN_LEDGER}/records?${DEFAULT_DATA_LIMIT}`;
     let result: DBLedgerData[];
 
     strapi.log.info(`apiURL: ${apiUri}`);
@@ -34,7 +39,7 @@ const getOperationalReport = async (
     month?: number
 ): Promise<FinanceDataApiResponse> => {
     const monthFilter = month ? `~and(month,eq,${month}` : '';
-    const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_KEUANGAN_OPERASIONAL}/records?where=(year,eq,${year})${monthFilter}&limit=1000`;
+    const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_KEUANGAN_OPERASIONAL}/records?where=(year,eq,${year})${monthFilter}&${DEFAULT_DATA_LIMIT}`;
     let monthlyData: FinanceMonthlyData[];
 
     strapi.log.info(`apiURL: ${apiUri}`);
@@ -59,7 +64,7 @@ const getPRSReport = async (
     month?: number
 ): Promise<FinanceDataApiResponse> => {
     const monthFilter = month ? `~and(month,eq,${month}` : '';
-    const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_KEUANGAN_PRS}/records?where=(year,eq,${year})${monthFilter}&limit=1000`;
+    const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_KEUANGAN_PRS}/records?where=(year,eq,${year})${monthFilter}&${DEFAULT_DATA_LIMIT}`;
     let monthlyData: FinanceMonthlyData[];
 
     strapi.log.info(`apiURL: ${apiUri}`);
@@ -77,6 +82,73 @@ const getPRSReport = async (
         type: FinanceReportType.PRS,
         monthlyData,
     };
+};
+
+const getBalanceSummaries = async (
+    year: number
+): Promise<FinanceSummaryApiResponse> => {
+    const apiUriCashFlow = `tables/${process.env.IWKZ_NOCODB_TABLE_KEUANGAN_CASHFLOW}/records?where=(year,eq,${year})&${DEFAULT_DATA_LIMIT}`;
+    const apiClosingBalanceLastYear = `tables/${process.env.IWKZ_NOCODB_TABLE_KEUANGAN_CLOSINGBALANCE}/records?where=(year,eq,${year - 1})&${DEFAULT_DATA_LIMIT}`;
+
+    strapi.log.info(`apiUriCashFlow: ${apiUriCashFlow}`);
+    strapi.log.info(`apiClosingBalanceLastYear: ${apiClosingBalanceLastYear}`);
+
+    const operationalMonthlySummary: FinanceMonthlySummary[] = [];
+    const prsMonthlySummary: FinanceMonthlySummary[] = [];
+    let resultCashflow: DBFinanceCashFlow[];
+    let resultClosingBalanceLastYear: DBFinanceClosingBalance[];
+
+    try {
+        resultCashflow = await sendGetRequest(apiUriCashFlow);
+        resultClosingBalanceLastYear = await sendGetRequest(
+            apiClosingBalanceLastYear
+        );
+
+        resultCashflow.forEach(({ month, income, outcome, data_type }) => {
+            const tmpData = {
+                month,
+                [FinanceCashFlowType.INFLOW]: income,
+                [FinanceCashFlowType.OUTFLOW]: outcome,
+            };
+            if (data_type === FinanceReportType.OPERASIONAL) {
+                operationalMonthlySummary.push(tmpData);
+            } else if (data_type === FinanceReportType.PRS) {
+                prsMonthlySummary.push(tmpData);
+            }
+        });
+    } catch (error) {
+        strapi.log.error(error);
+    }
+
+    console.log(resultCashflow);
+
+    return {
+        year,
+        [FinanceReportType.OPERASIONAL]: {
+            monthlyData: operationalMonthlySummary,
+            lastyearIncomeBalance: getClosingBalanceValue(
+                resultClosingBalanceLastYear,
+                FinanceReportType.OPERASIONAL
+            ),
+        },
+        [FinanceReportType.PRS]: {
+            monthlyData: prsMonthlySummary,
+            lastyearIncomeBalance: getClosingBalanceValue(
+                resultClosingBalanceLastYear,
+                FinanceReportType.PRS
+            ),
+        },
+    };
+};
+
+const getClosingBalanceValue = (
+    data: DBFinanceClosingBalance[],
+    financeReport: FinanceReportType
+) => {
+    const closingBalanceData: DBFinanceClosingBalance = data.find(
+        ({ data_type }) => data_type === financeReport
+    );
+    return closingBalanceData.total_income || 0;
 };
 
 const evaluateMonthlyData = (data: DBFinanceData[]): FinanceMonthlyData[] => {
@@ -154,4 +226,4 @@ const sendGetRequest = async (apiUri: string) => {
     return data;
 };
 
-export { getOperationalReport, getPRSReport, getLedger };
+export { getOperationalReport, getPRSReport, getLedger, getBalanceSummaries };

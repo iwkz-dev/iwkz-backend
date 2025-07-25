@@ -27,5 +27,14 @@ export default {
                 middlewares: [],
             },
         },
+        {
+            method: 'GET',
+            path: '/financereport/summaries',
+            handler: 'financereport.summaryDataController',
+            config: {
+                policies: [],
+                middlewares: [],
+            },
+        },
     ],
 };

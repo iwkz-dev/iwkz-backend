@@ -27,10 +27,36 @@ export type DBFinanceData = {
     ledger_id: number;
 };
 
+export type DBFinanceCashFlow = {
+    year: number;
+    month: number;
+    income: number;
+    outcome: number;
+    data_type: string;
+};
+
+export type DBFinanceClosingBalance = {
+    year: number;
+    total_income: number;
+    data_type: string;
+};
+
 export type FinanceDataApiResponse = {
     year: number;
     type: FinanceReportType;
     monthlyData: FinanceMonthlyData[];
+};
+
+export type FinanceSummaryApiResponse = {
+    year: number;
+    [FinanceReportType.OPERASIONAL]: {
+        monthlyData: FinanceMonthlySummary[];
+        lastyearIncomeBalance: number;
+    };
+    [FinanceReportType.PRS]: {
+        monthlyData: FinanceMonthlySummary[];
+        lastyearIncomeBalance: number;
+    };
 };
 
 export type FinanceMonthlyData = {
@@ -43,14 +69,20 @@ export type FinanceMonthlyData = {
     };
 };
 
+export type FinanceMonthlySummary = {
+    month: number;
+    [FinanceCashFlowType.INFLOW]: number;
+    [FinanceCashFlowType.OUTFLOW]: number;
+};
+
 export type FinanceLedgerData = {
     ledgerId: number;
     total: number;
 };
 
 export enum FinanceReportType {
-    PRS = 'PRS',
-    OPERASIONAL = 'OPERASIONAL',
+    PRS = 'prs',
+    OPERASIONAL = 'operational',
 }
 
 export enum FinanceCashFlowType {

@@ -6,6 +6,7 @@ import {
     getPRSReport,
     getOperationalReport,
     getLedger,
+    getBalanceSummaries,
 } from '../services/financereport';
 
 const getPRSData = async (query) => {
@@ -23,6 +24,15 @@ const getOperationalData = async (query) => {
     } else {
         const currentYear = new Date().getFullYear();
         return await getOperationalReport(currentYear);
+    }
+};
+
+const getBalanceSummariesData = async (query) => {
+    if (query && query.year) {
+        return await getBalanceSummaries(query.year);
+    } else {
+        const currentYear = new Date().getFullYear();
+        return await getBalanceSummaries(currentYear);
     }
 };
 
@@ -46,6 +56,14 @@ export default {
     ledgerDataController: async (ctx, next) => {
         try {
             ctx.body = await getLedger();
+        } catch (err) {
+            ctx.body = err;
+            ctx.status = 500;
+        }
+    },
+    summaryDataController: async (ctx, next) => {
+        try {
+            ctx.body = await getBalanceSummariesData(ctx.query);
         } catch (err) {
             ctx.body = err;
             ctx.status = 500;
