@@ -3,7 +3,7 @@ name: IWKZ backend push to docker hub
 on:
     push:
         branches:
-            - production
+            - master
 
 jobs:
     build-and-deploy:
