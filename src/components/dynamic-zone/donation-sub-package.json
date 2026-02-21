@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_dynamic_zone_donation_sub_packages",
+  "info": {
+    "displayName": "DonationSubPackage"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "price": {
+      "type": "decimal",
+      "required": true
+    },
+    "targetDonation": {
+      "type": "decimal"
+    },
+    "uniqueCode": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    }
+  },
+  "config": {}
+}

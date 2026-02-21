@@ -42,6 +42,46 @@ export interface DynamicZoneActivityCategorySection
   };
 }
 
+export interface DynamicZoneDonationPackage extends Struct.ComponentSchema {
+  collectionName: 'components_dynamic_zone_donation_packages';
+  info: {
+    displayName: 'DonationPackage';
+  };
+  attributes: {
+    description: Schema.Attribute.RichText;
+    endDate: Schema.Attribute.Date;
+    image: Schema.Attribute.Media<'images' | 'files'>;
+    price: Schema.Attribute.Decimal;
+    published: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
+    subpackage: Schema.Attribute.Component<
+      'dynamic-zone.donation-sub-package',
+      true
+    >;
+    targetDonation: Schema.Attribute.Decimal;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    uniqueCode: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+  };
+}
+
+export interface DynamicZoneDonationSubPackage extends Struct.ComponentSchema {
+  collectionName: 'components_dynamic_zone_donation_sub_packages';
+  info: {
+    displayName: 'DonationSubPackage';
+  };
+  attributes: {
+    price: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    targetDonation: Schema.Attribute.Decimal;
+    title: Schema.Attribute.String;
+    uniqueCode: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+  };
+}
+
 export interface DynamicZoneHero extends Struct.ComponentSchema {
   collectionName: 'components_dynamic_zone_heroes';
   info: {
@@ -153,6 +193,8 @@ declare module '@strapi/strapi' {
       'dynamic-zone.activity': DynamicZoneActivity;
       'dynamic-zone.activity-category': DynamicZoneActivityCategory;
       'dynamic-zone.activity-category-section': DynamicZoneActivityCategorySection;
+      'dynamic-zone.donation-package': DynamicZoneDonationPackage;
+      'dynamic-zone.donation-sub-package': DynamicZoneDonationSubPackage;
       'dynamic-zone.hero': DynamicZoneHero;
       'dynamic-zone.histories': DynamicZoneHistories;
       'dynamic-zone.history-line': DynamicZoneHistoryLine;

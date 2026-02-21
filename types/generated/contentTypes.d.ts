@@ -373,6 +373,41 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiDonationPackageDonationPackage
+  extends Struct.SingleTypeSchema {
+  collectionName: 'donation_packages';
+  info: {
+    displayName: 'Donation';
+    pluralName: 'donation-packages';
+    singularName: 'donation-package';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    donationPackages: Schema.Attribute.Component<
+      'dynamic-zone.donation-package',
+      true
+    >;
+    headline: Schema.Attribute.String;
+    image: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::donation-package.donation-package'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    subHeadline: Schema.Attribute.Text;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiGlobalGlobal extends Struct.SingleTypeSchema {
   collectionName: 'globals';
   info: {
@@ -1074,6 +1109,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::donation-package.donation-package': ApiDonationPackageDonationPackage;
       'api::global.global': ApiGlobalGlobal;
       'api::logo.logo': ApiLogoLogo;
       'api::page.page': ApiPagePage;

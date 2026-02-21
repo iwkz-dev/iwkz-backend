@@ -1,0 +1,49 @@
+{
+  "collectionName": "components_dynamic_zone_donation_packages",
+  "info": {
+    "displayName": "DonationPackage"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "uniqueCode": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "published": {
+      "type": "boolean",
+      "required": true,
+      "default": false
+    },
+    "description": {
+      "type": "richtext"
+    },
+    "endDate": {
+      "type": "date"
+    },
+    "price": {
+      "type": "decimal"
+    },
+    "targetDonation": {
+      "type": "decimal"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files"
+      ]
+    },
+    "subpackage": {
+      "type": "component",
+      "component": "dynamic-zone.donation-sub-package",
+      "repeatable": true
+    }
+  },
+  "config": {}
+}
