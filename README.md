@@ -1,61 +1,102 @@
-# 🚀 Getting started with Strapi
+# IWKZ Backend (Strapi)
 
-Strapi comes with a full featured [Command Line Interface](https://docs.strapi.io/dev-docs/cli) (CLI) which lets you scaffold and manage your project in seconds.
+Backend CMS and API service for IWKZ, built with Strapi v5 and TypeScript.
 
-### `develop`
+## Tech Stack
 
-Start your Strapi application with autoReload enabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-develop)
+- Strapi `5.16.x`
+- Node.js `>=18 <=22`
+- MySQL
+- NocoDB integration
+- PayPal Checkout integration
 
+## Getting Started
+
+1. Install dependencies:
+
+```bash
+npm install
 ```
+
+2. Copy environment template:
+
+```bash
+cp .env.example .env
+```
+
+3. Fill required env values in `.env`.
+
+4. Run development server:
+
+```bash
 npm run develop
-# or
-yarn develop
 ```
 
-### `start`
+Server default:
+- `http://localhost:1337`
 
-Start your Strapi application with autoReload disabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-start)
+## Main Scripts
 
-```
-npm run start
-# or
-yarn start
-```
+- `npm run develop` start dev server with auto reload
+- `npm run start` start production server
+- `npm run build` build Strapi admin
+- `npm run strapi` run Strapi CLI command
 
-### `build`
+## Environment Variables (Important)
 
-Build your admin panel. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-build)
+Core:
+- `NODE_ENV`
+- `HOST`
+- `PORT`
+- `APP_KEYS`
+- `JWT_SECRET`
 
-```
-npm run build
-# or
-yarn build
-```
+Database:
+- `DATABASE_CLIENT`
+- `DATABASE_HOST`
+- `DATABASE_PORT`
+- `DATABASE_NAME`
+- `DATABASE_USERNAME`
+- `DATABASE_PASSWORD`
 
-## ⚙️ Deployment
+NocoDB:
+- `IWKZ_NOCODB_API`
+- `IWKZ_NOCODB_API_TOKEN`
+- `IWKZ_NOCODB_TABLE_DONATIONPACKAGE`
+- `IWKZ_NOCODB_TABLE_JADWAL_SHALAT`
+- `IWKZ_NOCODB_TABLE_JADWAL_SHALAT_LEAPDAY`
+- `IWKZ_NOCODB_TABLE_KEUANGAN_PRS`
+- `IWKZ_NOCODB_TABLE_KEUANGAN_OPERASIONAL`
+- `IWKZ_NOCODB_TABLE_KEUANGAN_SHALATJUMAT`
+- `IWKZ_NOCODB_TABLE_KEUANGAN_LEDGER`
 
-Strapi gives you many possible deployment options for your project including [Strapi Cloud](https://cloud.strapi.io). Browse the [deployment section of the documentation](https://docs.strapi.io/dev-docs/deployment) to find the best solution for your use case.
+PayPal:
+- `PAYPAL_BASE_URL`
+- `PAYPAL_CLIENT_ID`
+- `PAYPAL_CLIENT_SECRET`
+- `PAYPAL_CURRENCY`
 
-```
-yarn strapi deploy
-```
+## API Documentation
 
-## 📚 Learn more
+Custom endpoints overview:
+- `docs/api/custom-endpoints.md`
 
-- [Resource center](https://strapi.io/resource-center) - Strapi resource center.
-- [Strapi documentation](https://docs.strapi.io) - Official Strapi documentation.
-- [Strapi tutorials](https://strapi.io/tutorials) - List of tutorials made by the core team and the community.
-- [Strapi blog](https://strapi.io/blog) - Official Strapi blog containing articles made by the Strapi team and the community.
-- [Changelog](https://strapi.io/changelog) - Find out about the Strapi product updates, new features and general improvements.
+Donation Package PayPal flow:
+- `docs/api/donation-package-paypal.md`
 
-Feel free to check out the [Strapi GitHub repository](https://github.com/strapi/strapi). Your feedback and contributions are welcome!
+## Existing Custom Services
 
-## ✨ Community
+Custom business logic currently implemented in:
+- `src/api/donation-package/services/donation-package.ts`
+- `src/api/jadwalshalat/services/jadwalshalat.ts`
+- `src/api/financereport/services/financereport.ts`
 
-- [Discord](https://discord.strapi.io) - Come chat with the Strapi community including the core team.
-- [Forum](https://forum.strapi.io/) - Place to discuss, ask questions and find answers, show your Strapi project and get feedback or just talk with other Community members.
-- [Awesome Strapi](https://github.com/strapi/awesome-strapi) - A curated list of awesome things related to Strapi.
+Related custom routes/controllers:
+- `src/api/donation-package/routes/custom-donation-package.ts`
+- `src/api/jadwalshalat/routes/jadwalshalat.ts`
+- `src/api/financereport/routes/financereport.ts`
 
----
+## Notes
 
-<sub>🤫 Psst! [Strapi is hiring](https://strapi.io/careers).</sub>
+- Donation PayPal order uses gross-up calculation in backend so `total_price` from frontend is treated as net donation target.
+- PayPal capture endpoint persists donation records into NocoDB table configured by `IWKZ_NOCODB_TABLE_DONATIONPACKAGE`.
