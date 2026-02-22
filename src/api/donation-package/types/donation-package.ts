@@ -84,6 +84,7 @@ export class CapturePaypalPaymentInput {
 export interface PaypalCapture {
     id?: string;
     status?: string;
+    custom_id?: string;
     amount?: {
         value?: string;
         currency_code?: string;

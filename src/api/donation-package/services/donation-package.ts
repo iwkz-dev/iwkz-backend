@@ -439,7 +439,8 @@ const capturePaypalOrder = async (
         const capture = firstPurchaseUnit?.payments?.captures?.[0];
         const finalStatus = capture?.status ?? captureStatus;
         const captureId = capture?.id ?? '';
-        const items = parseItemsFromCustomId(firstPurchaseUnit?.custom_id);
+        const customId = capture?.custom_id ?? firstPurchaseUnit?.custom_id;
+        const items = parseItemsFromCustomId(customId);
 
         if (finalStatus !== 'COMPLETED') {
             strapi.log.warn('PayPal capture is not completed.', {
@@ -459,6 +460,8 @@ const capturePaypalOrder = async (
         if (items.length === 0) {
             strapi.log.error('No donation items found in PayPal custom_id.', {
                 orderId,
+                captureCustomId: capture?.custom_id,
+                purchaseUnitCustomId: firstPurchaseUnit?.custom_id,
             });
             throw new Error('No donation items found for this payment.');
         }
