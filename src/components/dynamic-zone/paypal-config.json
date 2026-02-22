@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_dynamic_zone_paypal_configs",
+  "info": {
+    "displayName": "PaypalConfig"
+  },
+  "options": {},
+  "attributes": {
+    "returnUrl": {
+      "type": "string"
+    },
+    "cancelUrl": {
+      "type": "string"
+    },
+    "fixFee": {
+      "type": "decimal"
+    },
+    "percentageFee": {
+      "type": "decimal"
+    }
+  },
+  "config": {}
+}

@@ -1,0 +1,25 @@
+{
+  "kind": "singleType",
+  "collectionName": "payment_configs",
+  "info": {
+    "singularName": "payment-config",
+    "pluralName": "payment-configs",
+    "displayName": "PaymentConfig"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "postbank": {
+      "type": "component",
+      "component": "dynamic-zone.bank-transfer",
+      "repeatable": false
+    },
+    "paypal": {
+      "type": "component",
+      "component": "dynamic-zone.paypal-config",
+      "repeatable": false
+    }
+  }
+}

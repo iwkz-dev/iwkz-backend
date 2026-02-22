@@ -42,6 +42,18 @@ export interface DynamicZoneActivityCategorySection
   };
 }
 
+export interface DynamicZoneBankTransfer extends Struct.ComponentSchema {
+  collectionName: 'components_dynamic_zone_bank_transfers';
+  info: {
+    displayName: 'BankTransfer';
+  };
+  attributes: {
+    bankName: Schema.Attribute.String;
+    bic: Schema.Attribute.String;
+    iban: Schema.Attribute.String;
+  };
+}
+
 export interface DynamicZoneDonationPackage extends Struct.ComponentSchema {
   collectionName: 'components_dynamic_zone_donation_packages';
   info: {
@@ -120,6 +132,19 @@ export interface DynamicZoneHistoryLine extends Struct.ComponentSchema {
   };
 }
 
+export interface DynamicZonePaypalConfig extends Struct.ComponentSchema {
+  collectionName: 'components_dynamic_zone_paypal_configs';
+  info: {
+    displayName: 'PaypalConfig';
+  };
+  attributes: {
+    cancelUrl: Schema.Attribute.String;
+    fixFee: Schema.Attribute.Decimal;
+    percentageFee: Schema.Attribute.Decimal;
+    returnUrl: Schema.Attribute.String;
+  };
+}
+
 export interface DynamicZoneTestimonials extends Struct.ComponentSchema {
   collectionName: 'components_dynamic_zone_testimonials';
   info: {
@@ -193,11 +218,13 @@ declare module '@strapi/strapi' {
       'dynamic-zone.activity': DynamicZoneActivity;
       'dynamic-zone.activity-category': DynamicZoneActivityCategory;
       'dynamic-zone.activity-category-section': DynamicZoneActivityCategorySection;
+      'dynamic-zone.bank-transfer': DynamicZoneBankTransfer;
       'dynamic-zone.donation-package': DynamicZoneDonationPackage;
       'dynamic-zone.donation-sub-package': DynamicZoneDonationSubPackage;
       'dynamic-zone.hero': DynamicZoneHero;
       'dynamic-zone.histories': DynamicZoneHistories;
       'dynamic-zone.history-line': DynamicZoneHistoryLine;
+      'dynamic-zone.paypal-config': DynamicZonePaypalConfig;
       'dynamic-zone.testimonials': DynamicZoneTestimonials;
       'global.footer': GlobalFooter;
       'global.navbar': GlobalNavbar;

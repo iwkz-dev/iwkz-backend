@@ -532,6 +532,35 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiPaymentConfigPaymentConfig extends Struct.SingleTypeSchema {
+  collectionName: 'payment_configs';
+  info: {
+    displayName: 'PaymentConfig';
+    pluralName: 'payment-configs';
+    singularName: 'payment-config';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-config.payment-config'
+    > &
+      Schema.Attribute.Private;
+    paypal: Schema.Attribute.Component<'dynamic-zone.paypal-config', false>;
+    postbank: Schema.Attribute.Component<'dynamic-zone.bank-transfer', false>;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiPrsDonationProgressPrsDonationProgress
   extends Struct.SingleTypeSchema {
   collectionName: 'prs_donation_progresses';
@@ -1113,6 +1142,7 @@ declare module '@strapi/strapi' {
       'api::global.global': ApiGlobalGlobal;
       'api::logo.logo': ApiLogoLogo;
       'api::page.page': ApiPagePage;
+      'api::payment-config.payment-config': ApiPaymentConfigPaymentConfig;
       'api::prs-donation-progress.prs-donation-progress': ApiPrsDonationProgressPrsDonationProgress;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;

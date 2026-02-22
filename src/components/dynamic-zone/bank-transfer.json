@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_dynamic_zone_bank_transfers",
+  "info": {
+    "displayName": "BankTransfer"
+  },
+  "options": {},
+  "attributes": {
+    "bankName": {
+      "type": "string"
+    },
+    "iban": {
+      "type": "string"
+    },
+    "bic": {
+      "type": "string"
+    }
+  },
+  "config": {}
+}
