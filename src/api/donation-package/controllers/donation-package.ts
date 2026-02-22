@@ -3,7 +3,10 @@
  */
 
 import { factories } from '@strapi/strapi';
-import type { CreatePaypalPaymentBody } from '../types/donation-package';
+import type {
+    CapturePaypalPaymentBody,
+    CreatePaypalPaymentBody,
+} from '../types/donation-package';
 
 const toNumber = (value: unknown): number => {
     if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
@@ -132,6 +135,35 @@ export default factories.createCoreController(
                 return ctx.internalServerError(
                     'Failed to create PayPal payment link.',
                 );
+            }
+        },
+        async capturePaypalPayment(ctx) {
+            try {
+                const body = (ctx.request.body ?? {}) as CapturePaypalPaymentBody;
+                const orderId = (body.order_id ?? body.token ?? '').trim();
+
+                if (!orderId) {
+                    return ctx.badRequest('`order_id` or `token` is required.');
+                }
+
+                const capture = await strapi
+                    .service('api::donation-package.donation-package')
+                    .capturePaypalPayment({
+                        order_id: orderId,
+                    });
+
+                return {
+                    data: {
+                        paypal_order_id: capture.orderId,
+                        paypal_capture_id: capture.captureId,
+                        paypal_status: capture.status,
+                        items: capture.items,
+                    },
+                    meta: {},
+                };
+            } catch (error) {
+                strapi.log.error('capturePaypalPayment controller failed.', error);
+                return ctx.internalServerError('Failed to capture PayPal payment.');
             }
         },
     }),

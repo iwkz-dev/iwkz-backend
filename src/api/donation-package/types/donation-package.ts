@@ -72,6 +72,35 @@ export class PaypalPaymentLinkResponse {
     feeAmount!: number;
 }
 
+export class CapturePaypalPaymentBody {
+    order_id?: string;
+    token?: string;
+}
+
+export class CapturePaypalPaymentInput {
+    order_id!: string;
+}
+
+export interface PaypalCapture {
+    id?: string;
+    status?: string;
+    amount?: {
+        value?: string;
+        currency_code?: string;
+    };
+}
+
+export interface PaypalCaptureOrderResponse {
+    id?: string;
+    status?: string;
+    purchase_units?: Array<{
+        custom_id?: string;
+        payments?: {
+            captures?: PaypalCapture[];
+        };
+    }>;
+}
+
 export interface PaypalConfigEntity {
     returnUrl?: string;
     cancelUrl?: string;

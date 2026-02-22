@@ -6,6 +6,7 @@ import { factories } from '@strapi/strapi';
 import axios from 'axios';
 import type { Core } from '@strapi/strapi';
 import type {
+    CapturePaypalPaymentInput,
     CreatePaypalPaymentInput,
     DonationPackageEntity,
     DonationPackageItem,
@@ -14,6 +15,7 @@ import type {
     NocoDonationResponse,
     PaymentConfigEntity,
     PaypalAccessTokenResponse,
+    PaypalCaptureOrderResponse,
     PaypalOrderResponse,
     PaypalPaymentLinkResponse,
 } from '../types/donation-package';
@@ -342,6 +344,139 @@ const createPaypalOrder = async (
     }
 };
 
+const parseItemsFromCustomId = (
+    customId: string | undefined,
+): Array<{ unique_code: string; total_order: number; total_price: number }> => {
+    if (!customId) return [];
+
+    return customId
+        .split('|')
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0)
+        .map((entry) => {
+            const [uniqueCode, totalOrderRaw, totalPriceRaw] = entry.split(':');
+            const totalOrder = toNumber(totalOrderRaw);
+            const totalPrice = toNumber(totalPriceRaw);
+
+            return {
+                unique_code: (uniqueCode ?? '').trim(),
+                total_order: totalOrder,
+                total_price: totalPrice,
+            };
+        })
+        .filter(
+            (item) =>
+                item.unique_code.length > 0 &&
+                item.total_order > 0 &&
+                item.total_price > 0,
+        );
+};
+
+const saveCapturedDonationToNocoDB = async (
+    strapi: Core.Strapi,
+    items: Array<{ unique_code: string; total_order: number; total_price: number }>,
+): Promise<void> => {
+    const nocoBaseUrl = process.env.IWKZ_NOCODB_API;
+    const nocoToken = process.env.IWKZ_NOCODB_API_TOKEN;
+
+    if (!nocoBaseUrl || !nocoToken || !DONATION_TABLE_ID) {
+        strapi.log.error(
+            'NocoDB configuration is incomplete for donation capture sync.',
+        );
+        throw new Error('NocoDB configuration is incomplete.');
+    }
+
+    const apiUrl = `${nocoBaseUrl}/tables/${DONATION_TABLE_ID}/records`;
+    const records = items.map((item) => ({
+        donation_code: item.unique_code,
+        total_order: item.total_order,
+        total_price: item.total_price,
+    }));
+
+    try {
+        for (const record of records) {
+            await axios.post(apiUrl, record, {
+                headers: {
+                    accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'xc-token': nocoToken,
+                },
+            });
+        }
+    } catch (error) {
+        strapi.log.error('Failed to save captured donation to NocoDB.', error);
+        throw new Error('Failed to persist donation capture.');
+    }
+};
+
+const capturePaypalOrder = async (
+    strapi: Core.Strapi,
+    payload: CapturePaypalPaymentInput,
+): Promise<{
+    orderId: string;
+    captureId: string;
+    status: string;
+    items: Array<{ unique_code: string; total_order: number; total_price: number }>;
+}> => {
+    const accessToken = await getPaypalAccessToken(strapi);
+    const captureUrl = `${PAYPAL_BASE_URL}/v2/checkout/orders/${payload.order_id}/capture`;
+
+    try {
+        const response = await axios.post<PaypalCaptureOrderResponse>(
+            captureUrl,
+            {},
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            },
+        );
+
+        const orderId = response.data?.id ?? payload.order_id;
+        const captureStatus = response.data?.status ?? '';
+        const firstPurchaseUnit = response.data?.purchase_units?.[0];
+        const capture = firstPurchaseUnit?.payments?.captures?.[0];
+        const finalStatus = capture?.status ?? captureStatus;
+        const captureId = capture?.id ?? '';
+        const items = parseItemsFromCustomId(firstPurchaseUnit?.custom_id);
+
+        if (finalStatus !== 'COMPLETED') {
+            strapi.log.warn('PayPal capture is not completed.', {
+                orderId,
+                status: finalStatus,
+            });
+            throw new Error('PayPal capture is not completed.');
+        }
+
+        if (!captureId) {
+            strapi.log.error('PayPal capture response missing capture id.', {
+                orderId,
+            });
+            throw new Error('PayPal capture id is missing.');
+        }
+
+        if (items.length === 0) {
+            strapi.log.error('No donation items found in PayPal custom_id.', {
+                orderId,
+            });
+            throw new Error('No donation items found for this payment.');
+        }
+
+        await saveCapturedDonationToNocoDB(strapi, items);
+
+        return {
+            orderId,
+            captureId,
+            status: finalStatus,
+            items,
+        };
+    } catch (error) {
+        strapi.log.error('Failed to capture PayPal order.', error);
+        throw new Error('Unable to capture PayPal payment.');
+    }
+};
+
 const donationPackageService = ({ strapi }: { strapi: Core.Strapi }) => ({
     async findWithStatus() {
         try {
@@ -389,6 +524,14 @@ const donationPackageService = ({ strapi }: { strapi: Core.Strapi }) => ({
             return await createPaypalOrder(strapi, payload);
         } catch (error) {
             strapi.log.error('Failed to build PayPal payment link.', error);
+            throw error;
+        }
+    },
+    async capturePaypalPayment(payload: CapturePaypalPaymentInput) {
+        try {
+            return await capturePaypalOrder(strapi, payload);
+        } catch (error) {
+            strapi.log.error('Failed to handle PayPal capture.', error);
             throw error;
         }
     },

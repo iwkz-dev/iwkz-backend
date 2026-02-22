@@ -9,5 +9,14 @@ export default {
                 middlewares: [],
             },
         },
+        {
+            method: 'POST',
+            path: '/donation-package/paypal/capture',
+            handler: 'donation-package.capturePaypalPayment',
+            config: {
+                policies: [],
+                middlewares: [],
+            },
+        },
     ],
 };
