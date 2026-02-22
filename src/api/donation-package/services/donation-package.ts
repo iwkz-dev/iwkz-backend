@@ -374,6 +374,7 @@ const parseItemsFromCustomId = (
 
 const saveCapturedDonationToNocoDB = async (
     strapi: Core.Strapi,
+    captureId: string,
     items: Array<{ unique_code: string; total_order: number; total_price: number }>,
 ): Promise<void> => {
     const nocoBaseUrl = process.env.IWKZ_NOCODB_API;
@@ -387,7 +388,31 @@ const saveCapturedDonationToNocoDB = async (
     }
 
     const apiUrl = `${nocoBaseUrl}/tables/${DONATION_TABLE_ID}/records`;
+    const where = encodeURIComponent(`(capture_id,eq,${captureId})`);
+    const checkUrl = `${apiUrl}?where=${where}&limit=1&shuffle=0&offset=0`;
+
+    try {
+        const existingResponse = await axios.get<NocoDonationResponse>(checkUrl, {
+            headers: {
+                accept: 'application/json',
+                'xc-token': nocoToken,
+            },
+        });
+
+        const existingRows = existingResponse.data?.list ?? [];
+        if (existingRows.length > 0) {
+            strapi.log.info(
+                `Capture ${captureId} already persisted in NocoDB. Skipping insert.`,
+            );
+            return;
+        }
+    } catch (error) {
+        strapi.log.error('Failed to check capture id in NocoDB.', error);
+        throw new Error('Failed to verify donation capture state.');
+    }
+
     const records = items.map((item) => ({
+        capture_id: captureId,
         donation_code: item.unique_code,
         total_order: item.total_order,
         total_price: item.total_price,
@@ -466,7 +491,7 @@ const capturePaypalOrder = async (
             throw new Error('No donation items found for this payment.');
         }
 
-        await saveCapturedDonationToNocoDB(strapi, items);
+        await saveCapturedDonationToNocoDB(strapi, captureId, items);
 
         return {
             orderId,
