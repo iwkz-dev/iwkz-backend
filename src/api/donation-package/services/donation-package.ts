@@ -38,6 +38,14 @@ const toNumber = (value: unknown): number => {
     return 0;
 };
 
+const roundToCurrency = (value: number): number => {
+    return Math.round(value * 100) / 100;
+};
+
+const ceilToCurrency = (value: number): number => {
+    return Math.ceil(value * 100) / 100;
+};
+
 const buildStatsMap = (
     records: NocoDonationRecord[],
 ): Map<string, DonationStats> => {
@@ -166,7 +174,12 @@ const getPaypalAccessToken = async (strapi: Core.Strapi): Promise<string> => {
 
 const getPaypalRedirectUrls = async (
     strapi: Core.Strapi,
-): Promise<{ returnUrl: string; cancelUrl: string }> => {
+): Promise<{
+    returnUrl: string;
+    cancelUrl: string;
+    fixFeeMinor: number;
+    percentageFeeBps: number;
+}> => {
     try {
         const paymentConfig = (await strapi.entityService.findMany(
             'api::payment-config.payment-config',
@@ -179,6 +192,8 @@ const getPaypalRedirectUrls = async (
 
         const returnUrl = paymentConfig?.paypal?.returnUrl?.trim();
         const cancelUrl = paymentConfig?.paypal?.cancelUrl?.trim();
+        const fixFeeMinor = toNumber(paymentConfig?.paypal?.fixFee);
+        const percentageFeeBps = toNumber(paymentConfig?.paypal?.percentageFee);
 
         if (!returnUrl || !cancelUrl) {
             strapi.log.error(
@@ -187,7 +202,15 @@ const getPaypalRedirectUrls = async (
             throw new Error('PayPal redirect URL is not configured.');
         }
 
-        return { returnUrl, cancelUrl };
+        if (fixFeeMinor < 0 || percentageFeeBps < 0 || percentageFeeBps >= 10000) {
+            strapi.log.error('Invalid PayPal fee configuration detected.', {
+                fixFeeMinor,
+                percentageFeeBps,
+            });
+            throw new Error('PayPal fee configuration is invalid.');
+        }
+
+        return { returnUrl, cancelUrl, fixFeeMinor, percentageFeeBps };
     } catch (error) {
         strapi.log.error(
             'Failed to read PayPal redirect config from payment-config.',
@@ -202,7 +225,27 @@ const createPaypalOrder = async (
     payload: CreatePaypalPaymentInput,
 ): Promise<PaypalPaymentLinkResponse> => {
     const accessToken = await getPaypalAccessToken(strapi);
-    const { returnUrl, cancelUrl } = await getPaypalRedirectUrls(strapi);
+    const { returnUrl, cancelUrl, fixFeeMinor, percentageFeeBps } =
+        await getPaypalRedirectUrls(strapi);
+    const netAmount = roundToCurrency(payload.total_price);
+    const fixedFee = roundToCurrency(fixFeeMinor / 100);
+    const percentageFeeRate = percentageFeeBps / 10000;
+    const grossAmount = ceilToCurrency(
+        (netAmount + fixedFee) / (1 - percentageFeeRate),
+    );
+    const feeAmount = roundToCurrency(grossAmount - netAmount);
+
+    if (grossAmount <= 0 || feeAmount < 0) {
+        strapi.log.error('Invalid gross-up result for PayPal order.', {
+            netAmount,
+            grossAmount,
+            feeAmount,
+            fixFeeMinor,
+            percentageFeeBps,
+        });
+        throw new Error('Unable to calculate PayPal gross amount.');
+    }
+
     const description = payload.items
         .map((item) => item.unique_code)
         .join(',')
@@ -223,6 +266,17 @@ const createPaypalOrder = async (
         },
     }));
 
+    if (feeAmount > 0) {
+        paypalItems.push({
+            name: 'PayPal processing fee',
+            quantity: '1',
+            unit_amount: {
+                currency_code: PAYPAL_CURRENCY,
+                value: feeAmount.toFixed(2),
+            },
+        });
+    }
+
     const orderPayload: Record<string, unknown> = {
         intent: 'CAPTURE',
         purchase_units: [
@@ -232,11 +286,11 @@ const createPaypalOrder = async (
                 description,
                 amount: {
                     currency_code: PAYPAL_CURRENCY,
-                    value: payload.total_price.toFixed(2),
+                    value: grossAmount.toFixed(2),
                     breakdown: {
                         item_total: {
                             currency_code: PAYPAL_CURRENCY,
-                            value: payload.total_price.toFixed(2),
+                            value: grossAmount.toFixed(2),
                         },
                     },
                 },
@@ -278,6 +332,9 @@ const createPaypalOrder = async (
         return {
             orderId: response.data.id,
             approvalUrl,
+            netAmount,
+            grossAmount,
+            feeAmount,
         };
     } catch (error) {
         strapi.log.error('Failed to create PayPal order.', error);

@@ -67,11 +67,16 @@ export interface PaypalOrderResponse {
 export class PaypalPaymentLinkResponse {
     orderId!: string;
     approvalUrl!: string;
+    netAmount!: number;
+    grossAmount!: number;
+    feeAmount!: number;
 }
 
 export interface PaypalConfigEntity {
     returnUrl?: string;
     cancelUrl?: string;
+    fixFee?: number | string;
+    percentageFee?: number | string;
     [key: string]: unknown;
 }
 

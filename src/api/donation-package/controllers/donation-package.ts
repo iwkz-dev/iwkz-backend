@@ -114,6 +114,9 @@ export default factories.createCoreController(
                         items: normalizedItems,
                         paypal_order_id: payment.orderId,
                         paypal_link: payment.approvalUrl,
+                        paypal_net_amount: payment.netAmount,
+                        paypal_fee_amount: payment.feeAmount,
+                        paypal_gross_amount: payment.grossAmount,
                     },
                     meta: {},
                 };
