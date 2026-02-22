@@ -5,38 +5,18 @@
 import { factories } from '@strapi/strapi';
 import axios from 'axios';
 import type { Core } from '@strapi/strapi';
-
-type DonationSubpackage = {
-    uniqueCode?: string;
-    [key: string]: unknown;
-};
-
-type DonationPackageItem = {
-    code?: string;
-    uniqueCode?: string;
-    subpackage?: DonationSubpackage[] | null;
-    [key: string]: unknown;
-};
-
-type DonationPackageEntity = {
-    donationPackages?: DonationPackageItem[];
-    [key: string]: unknown;
-};
-
-type DonationStats = {
-    total_order: number;
-    total_donation: number;
-};
-
-type NocoDonationRecord = {
-    donation_code?: string;
-    total_order?: number | string;
-    total_price?: number | string;
-};
-
-type NocoDonationResponse = {
-    list?: NocoDonationRecord[];
-};
+import type {
+    CreatePaypalPaymentInput,
+    DonationPackageEntity,
+    DonationPackageItem,
+    DonationStats,
+    NocoDonationRecord,
+    NocoDonationResponse,
+    PaymentConfigEntity,
+    PaypalAccessTokenResponse,
+    PaypalOrderResponse,
+    PaypalPaymentLinkResponse,
+} from '../types/donation-package';
 
 const ZERO_STATS: DonationStats = {
     total_order: 0,
@@ -44,6 +24,9 @@ const ZERO_STATS: DonationStats = {
 };
 
 const DONATION_TABLE_ID = process.env.IWKZ_NOCODB_TABLE_DONATIONPACKAGE;
+const PAYPAL_BASE_URL =
+    process.env.PAYPAL_BASE_URL ?? 'https://api-m.sandbox.paypal.com';
+const PAYPAL_CURRENCY = process.env.PAYPAL_CURRENCY ?? 'EUR';
 
 const toNumber = (value: unknown): number => {
     if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
@@ -140,49 +123,221 @@ const fetchDonationStats = async (
     }
 };
 
-export default factories.createCoreService(
-    'api::donation-package.donation-package',
-    ({ strapi }) => ({
-        async findWithStatus() {
-            try {
-                const entity = (await strapi.entityService.findMany(
-                    'api::donation-package.donation-package',
-                    {
-                        populate: {
-                            donationPackages: {
-                                populate: {
-                                    image: true,
-                                    subpackage: true,
-                                },
+const getPaypalAccessToken = async (strapi: Core.Strapi): Promise<string> => {
+    const clientId = process.env.PAYPAL_CLIENT_ID;
+    const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+        strapi.log.error(
+            'PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET is not configured.',
+        );
+        throw new Error('PayPal configuration is incomplete.');
+    }
+
+    try {
+        const tokenUrl = `${PAYPAL_BASE_URL}/v1/oauth2/token`;
+        const response = await axios.post<PaypalAccessTokenResponse>(
+            tokenUrl,
+            'grant_type=client_credentials',
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                auth: {
+                    username: clientId,
+                    password: clientSecret,
+                },
+            },
+        );
+
+        if (!response.data?.access_token) {
+            strapi.log.error(
+                'PayPal token response does not include access token.',
+            );
+            throw new Error('PayPal authentication failed.');
+        }
+
+        return response.data.access_token;
+    } catch (error) {
+        strapi.log.error('Failed to get PayPal access token.', error);
+        throw new Error('Unable to authenticate with PayPal.');
+    }
+};
+
+const getPaypalRedirectUrls = async (
+    strapi: Core.Strapi,
+): Promise<{ returnUrl: string; cancelUrl: string }> => {
+    try {
+        const paymentConfig = (await strapi.entityService.findMany(
+            'api::payment-config.payment-config',
+            {
+                populate: {
+                    paypal: true,
+                },
+            },
+        )) as PaymentConfigEntity | null;
+
+        const returnUrl = paymentConfig?.paypal?.returnUrl?.trim();
+        const cancelUrl = paymentConfig?.paypal?.cancelUrl?.trim();
+
+        if (!returnUrl || !cancelUrl) {
+            strapi.log.error(
+                'PayPal redirect URL config is missing in payment-config.paypal.',
+            );
+            throw new Error('PayPal redirect URL is not configured.');
+        }
+
+        return { returnUrl, cancelUrl };
+    } catch (error) {
+        strapi.log.error(
+            'Failed to read PayPal redirect config from payment-config.',
+            error,
+        );
+        throw new Error('Unable to resolve PayPal redirect configuration.');
+    }
+};
+
+const createPaypalOrder = async (
+    strapi: Core.Strapi,
+    payload: CreatePaypalPaymentInput,
+): Promise<PaypalPaymentLinkResponse> => {
+    const accessToken = await getPaypalAccessToken(strapi);
+    const { returnUrl, cancelUrl } = await getPaypalRedirectUrls(strapi);
+    const description = payload.items
+        .map((item) => item.unique_code)
+        .join(',')
+        .slice(0, 127);
+    const customId = payload.items
+        .map(
+            (item) =>
+                `${item.unique_code}:${item.total_order}:${item.total_price}`,
+        )
+        .join('|')
+        .slice(0, 127);
+    const paypalItems = payload.items.map((item) => ({
+        name: `${item.unique_code} x${item.total_order}`.slice(0, 127),
+        quantity: '1',
+        unit_amount: {
+            currency_code: PAYPAL_CURRENCY,
+            value: item.total_price.toFixed(2),
+        },
+    }));
+
+    const orderPayload: Record<string, unknown> = {
+        intent: 'CAPTURE',
+        purchase_units: [
+            {
+                reference_id: `donation_${Date.now()}`,
+                custom_id: customId,
+                description,
+                amount: {
+                    currency_code: PAYPAL_CURRENCY,
+                    value: payload.total_price.toFixed(2),
+                    breakdown: {
+                        item_total: {
+                            currency_code: PAYPAL_CURRENCY,
+                            value: payload.total_price.toFixed(2),
+                        },
+                    },
+                },
+                items: paypalItems,
+            },
+        ],
+    };
+
+    orderPayload.application_context = {
+        return_url: returnUrl,
+        cancel_url: cancelUrl,
+        user_action: 'PAY_NOW',
+    };
+
+    try {
+        const orderUrl = `${PAYPAL_BASE_URL}/v2/checkout/orders`;
+        const response = await axios.post<PaypalOrderResponse>(
+            orderUrl,
+            orderPayload,
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            },
+        );
+
+        const approvalUrl = response.data?.links?.find(
+            (link) => link.rel === 'approve',
+        )?.href;
+
+        if (!approvalUrl || !response.data?.id) {
+            strapi.log.error('PayPal order response missing approval link.', {
+                orderId: response.data?.id,
+            });
+            throw new Error('PayPal approval link is unavailable.');
+        }
+
+        return {
+            orderId: response.data.id,
+            approvalUrl,
+        };
+    } catch (error) {
+        strapi.log.error('Failed to create PayPal order.', error);
+        throw new Error('Unable to create PayPal payment link.');
+    }
+};
+
+const donationPackageService = ({ strapi }: { strapi: Core.Strapi }) => ({
+    async findWithStatus() {
+        try {
+            const entity = (await strapi.entityService.findMany(
+                'api::donation-package.donation-package',
+                {
+                    populate: {
+                        donationPackages: {
+                            populate: {
+                                image: true,
+                                subpackage: true,
                             },
                         },
                     },
-                )) as DonationPackageEntity | null;
+                },
+            )) as DonationPackageEntity | null;
 
-                if (!entity) {
-                    strapi.log.warn(
-                        'Donation package single type is empty or not found.',
-                    );
-                    return null;
-                }
-
-                const statsMap = await fetchDonationStats(strapi);
-                const enrichedPackages = enrichDonationPackages(
-                    entity.donationPackages ?? [],
-                    statsMap,
+            if (!entity) {
+                strapi.log.warn(
+                    'Donation package single type is empty or not found.',
                 );
-
-                return {
-                    ...entity,
-                    donationPackages: enrichedPackages,
-                };
-            } catch (error) {
-                strapi.log.error(
-                    'Failed to build donation package response.',
-                    error,
-                );
-                throw error;
+                return null;
             }
-        },
-    }),
+
+            const statsMap = await fetchDonationStats(strapi);
+            const enrichedPackages = enrichDonationPackages(
+                entity.donationPackages ?? [],
+                statsMap,
+            );
+
+            return {
+                ...entity,
+                donationPackages: enrichedPackages,
+            };
+        } catch (error) {
+            strapi.log.error(
+                'Failed to build donation package response.',
+                error,
+            );
+            throw error;
+        }
+    },
+    async createPaypalPaymentLink(payload: CreatePaypalPaymentInput) {
+        try {
+            return await createPaypalOrder(strapi, payload);
+        } catch (error) {
+            strapi.log.error('Failed to build PayPal payment link.', error);
+            throw error;
+        }
+    },
+});
+
+export default factories.createCoreService(
+    'api::donation-package.donation-package',
+    donationPackageService,
 );
