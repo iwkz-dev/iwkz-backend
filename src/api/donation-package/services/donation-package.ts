@@ -74,22 +74,19 @@ const enrichDonationPackages = (
     statsMap: Map<string, DonationStats>,
 ): DonationPackageItem[] => {
     return packages.map((pkg) => {
-        if (!pkg.subpackage || pkg.subpackage.length === 0) {
-            const stats = statsMap.get(pkg.uniqueCode ?? '') ?? ZERO_STATS;
-
+        if (!pkg.donationItems || pkg.donationItems.length === 0) {
             return {
                 ...pkg,
-                total_order: stats.total_order,
-                total_donation: stats.total_donation,
+                donationItems: [],
             };
         }
 
-        const enrichedSubpackages = pkg.subpackage.map((sub) => {
-            const donationCode = `${pkg.uniqueCode ?? ''}_${sub.uniqueCode ?? ''}`;
+        const enrichedDonationItems = pkg.donationItems.map((item) => {
+            const donationCode = item.uniqueCode ?? '';
             const stats = statsMap.get(donationCode) ?? ZERO_STATS;
 
             return {
-                ...sub,
+                ...item,
                 total_order: stats.total_order,
                 total_donation: stats.total_donation,
             };
@@ -97,7 +94,7 @@ const enrichDonationPackages = (
 
         return {
             ...pkg,
-            subpackage: enrichedSubpackages,
+            donationItems: enrichedDonationItems,
         };
     });
 };
@@ -204,7 +201,11 @@ const getPaypalRedirectUrls = async (
             throw new Error('PayPal redirect URL is not configured.');
         }
 
-        if (fixFeeMinor < 0 || percentageFeeBps < 0 || percentageFeeBps >= 10000) {
+        if (
+            fixFeeMinor < 0 ||
+            percentageFeeBps < 0 ||
+            percentageFeeBps >= 10000
+        ) {
             strapi.log.error('Invalid PayPal fee configuration detected.', {
                 fixFeeMinor,
                 percentageFeeBps,
@@ -375,7 +376,11 @@ const parseItemsFromCustomId = (
 const saveCapturedDonationToNocoDB = async (
     strapi: Core.Strapi,
     captureId: string,
-    items: Array<{ unique_code: string; total_order: number; total_price: number }>,
+    items: Array<{
+        unique_code: string;
+        total_order: number;
+        total_price: number;
+    }>,
 ): Promise<void> => {
     const nocoBaseUrl = process.env.IWKZ_NOCODB_API;
     const nocoToken = process.env.IWKZ_NOCODB_API_TOKEN;
@@ -392,12 +397,15 @@ const saveCapturedDonationToNocoDB = async (
     const checkUrl = `${apiUrl}?where=${where}&limit=1&shuffle=0&offset=0`;
 
     try {
-        const existingResponse = await axios.get<NocoDonationResponse>(checkUrl, {
-            headers: {
-                accept: 'application/json',
-                'xc-token': nocoToken,
+        const existingResponse = await axios.get<NocoDonationResponse>(
+            checkUrl,
+            {
+                headers: {
+                    accept: 'application/json',
+                    'xc-token': nocoToken,
+                },
             },
-        });
+        );
 
         const existingRows = existingResponse.data?.list ?? [];
         if (existingRows.length > 0) {
@@ -441,7 +449,11 @@ const capturePaypalOrder = async (
     orderId: string;
     captureId: string;
     status: string;
-    items: Array<{ unique_code: string; total_order: number; total_price: number }>;
+    items: Array<{
+        unique_code: string;
+        total_order: number;
+        total_price: number;
+    }>;
 }> => {
     const accessToken = await getPaypalAccessToken(strapi);
     const captureUrl = `${PAYPAL_BASE_URL}/v2/checkout/orders/${payload.order_id}/capture`;
@@ -512,10 +524,11 @@ const donationPackageService = ({ strapi }: { strapi: Core.Strapi }) => ({
                 'api::donation-package.donation-package',
                 {
                     populate: {
+                        image: true,
                         donationPackages: {
                             populate: {
                                 image: true,
-                                subpackage: true,
+                                donationItems: true,
                             },
                         },
                     },

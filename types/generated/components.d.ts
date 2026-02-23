@@ -61,21 +61,16 @@ export interface DynamicZoneDonationPackage extends Struct.ComponentSchema {
   };
   attributes: {
     description: Schema.Attribute.RichText;
-    endDate: Schema.Attribute.Date;
-    image: Schema.Attribute.Media<'images' | 'files'>;
-    price: Schema.Attribute.Decimal;
-    published: Schema.Attribute.Boolean &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<false>;
-    subpackage: Schema.Attribute.Component<
+    donationItems: Schema.Attribute.Component<
       'dynamic-zone.donation-sub-package',
       true
     >;
-    targetDonation: Schema.Attribute.Decimal;
-    title: Schema.Attribute.String & Schema.Attribute.Required;
-    uniqueCode: Schema.Attribute.String &
+    endDate: Schema.Attribute.Date;
+    image: Schema.Attribute.Media<'files' | 'images'>;
+    published: Schema.Attribute.Boolean &
       Schema.Attribute.Required &
-      Schema.Attribute.Unique;
+      Schema.Attribute.DefaultTo<false>;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
   };
 }
 

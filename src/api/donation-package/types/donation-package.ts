@@ -1,12 +1,19 @@
-export interface DonationSubpackage {
+export interface DonationDonationItem {
+    title?: string;
+    price?: number | string;
     uniqueCode?: string;
+    targetDonation?: number | string | null;
+    total_order?: number;
+    total_donation?: number;
     [key: string]: unknown;
 }
 
 export interface DonationPackageItem {
-    code?: string;
-    uniqueCode?: string;
-    subpackage?: DonationSubpackage[] | null;
+    title?: string;
+    description?: string;
+    published?: boolean;
+    endDate?: string | null;
+    donationItems?: DonationDonationItem[] | null;
     [key: string]: unknown;
 }
 

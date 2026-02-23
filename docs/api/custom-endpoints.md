@@ -11,11 +11,17 @@ Source:
 - `src/api/donation-package/routes/custom-donation-package.ts`
 
 Endpoints:
+- `GET /donation-package` (customized payload from service)
 - `POST /donation-package/paypal`
 - `POST /donation-package/paypal/capture`
 
 Detailed docs:
 - `docs/api/donation-package-paypal.md`
+
+Behavior:
+- `GET /donation-package` returns package-level information.
+- Donation options now live in `donationPackages[].donationItems`.
+- Donation stats are attached per `donationItems[].uniqueCode`.
 
 ## Jadwal Shalat
 

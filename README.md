@@ -100,3 +100,4 @@ Related custom routes/controllers:
 
 - Donation PayPal order uses gross-up calculation in backend so `total_price` from frontend is treated as net donation target.
 - PayPal capture endpoint persists donation records into NocoDB table configured by `IWKZ_NOCODB_TABLE_DONATIONPACKAGE`.
+- Donation catalog now uses `donationPackages[].donationItems` where each item provides `uniqueCode`, `price`, and `targetDonation`.

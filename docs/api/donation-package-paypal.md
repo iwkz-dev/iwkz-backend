@@ -14,6 +14,7 @@ Purpose:
 - Accept donation items in net amount.
 - Calculate PayPal gross-up fee in backend using `payment-config`.
 - Create PayPal order and return approval link for frontend redirect.
+- `items[].unique_code` should come from `donationPackages[].donationItems[].uniqueCode`.
 
 Request body:
 
@@ -136,6 +137,7 @@ Error responses:
 ## Data Persistence to NocoDB
 
 Current implementation inserts one row per donation item with fields:
+- `capture_id`
 - `donation_code`
 - `total_order`
 - `total_price`

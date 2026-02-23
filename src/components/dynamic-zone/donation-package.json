@@ -9,11 +9,6 @@
       "type": "string",
       "required": true
     },
-    "uniqueCode": {
-      "type": "string",
-      "required": true,
-      "unique": true
-    },
     "published": {
       "type": "boolean",
       "required": true,
@@ -25,21 +20,15 @@
     "endDate": {
       "type": "date"
     },
-    "price": {
-      "type": "decimal"
-    },
-    "targetDonation": {
-      "type": "decimal"
-    },
     "image": {
       "type": "media",
       "multiple": false,
       "allowedTypes": [
-        "images",
-        "files"
+        "files",
+        "images"
       ]
     },
-    "subpackage": {
+    "donationItems": {
       "type": "component",
       "component": "dynamic-zone.donation-sub-package",
       "repeatable": true
