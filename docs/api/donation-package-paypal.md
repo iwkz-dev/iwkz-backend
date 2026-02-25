@@ -112,6 +112,47 @@ Error responses:
 - `400 Bad Request` when `order_id` and `token` are missing.
 - `500 Internal Server Error` when capture fails or persistence to NocoDB fails.
 
+## 3. Create Bank Transfer Donation (Admin)
+
+Endpoint:
+- `POST /donation-package/bank-transfer`
+
+Purpose:
+- Insert manual donation transaction into NocoDB for bank transfer flow.
+
+Request body:
+
+```json
+{
+  "items": [
+    { "donation_code": "operational", "total_order": 1, "total_price": 100 },
+    { "donation_code": "ramadan1447_iftar", "total_order": 2, "total_price": 30 }
+  ]
+}
+```
+
+Validation rules:
+- `items` can contain one or more rows.
+- For each item:
+- `donation_code` is required.
+- `total_order` must be `> 0`.
+- `total_price` must be `> 0`.
+- Backward-compatible: single item body without `items` is still accepted.
+
+Success response example:
+
+```json
+{
+  "data": {
+    "items": [
+      { "donation_code": "operational", "total_order": 1, "total_price": 100 },
+      { "donation_code": "ramadan1447_iftar", "total_order": 2, "total_price": 30 }
+    ]
+  },
+  "meta": {}
+}
+```
+
 ## PayPal Fee Handling (Implemented)
 
 - Frontend sends `total_price` as net donation target.

@@ -77,10 +77,12 @@ export interface DynamicZoneDonationPackage extends Struct.ComponentSchema {
 export interface DynamicZoneDonationSubPackage extends Struct.ComponentSchema {
   collectionName: 'components_dynamic_zone_donation_sub_packages';
   info: {
-    displayName: 'DonationSubPackage';
+    displayName: 'DonationItem';
   };
   attributes: {
     price: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    requireDonatorInfo: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     targetDonation: Schema.Attribute.Decimal;
     title: Schema.Attribute.String;
     uniqueCode: Schema.Attribute.String &

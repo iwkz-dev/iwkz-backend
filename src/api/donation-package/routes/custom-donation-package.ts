@@ -18,5 +18,14 @@ export default {
                 middlewares: [],
             },
         },
+        {
+            method: 'POST',
+            path: '/donation-package/bank-transfer',
+            handler: 'donation-package.createBankTransferDonation',
+            config: {
+                policies: [],
+                middlewares: [],
+            },
+        },
     ],
 };

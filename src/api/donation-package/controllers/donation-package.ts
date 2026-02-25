@@ -5,6 +5,7 @@
 import { factories } from '@strapi/strapi';
 import type {
     CapturePaypalPaymentBody,
+    CreateBankTransferDonationBody,
     CreatePaypalPaymentBody,
 } from '../types/donation-package';
 
@@ -48,13 +49,16 @@ export default factories.createCoreController(
                 }
 
                 if (items.length === 0) {
-                    return ctx.badRequest('`items` is required and must not be empty.');
+                    return ctx.badRequest(
+                        '`items` is required and must not be empty.',
+                    );
                 }
 
                 const normalizedItems = items.map((item, index) => {
                     const uniqueCode = item.unique_code?.trim();
                     const itemTotalOrder = toNumber(item.total_order);
                     const itemTotalPrice = toNumber(item.total_price);
+                    const description = item.description?.trim() || '';
 
                     if (!uniqueCode) {
                         throw new Error(
@@ -62,13 +66,19 @@ export default factories.createCoreController(
                         );
                     }
 
-                    if (!Number.isFinite(itemTotalOrder) || itemTotalOrder <= 0) {
+                    if (
+                        !Number.isFinite(itemTotalOrder) ||
+                        itemTotalOrder <= 0
+                    ) {
                         throw new Error(
                             `Invalid item at index ${index}: \`total_order\` must be a number > 0.`,
                         );
                     }
 
-                    if (!Number.isFinite(itemTotalPrice) || itemTotalPrice <= 0) {
+                    if (
+                        !Number.isFinite(itemTotalPrice) ||
+                        itemTotalPrice <= 0
+                    ) {
                         throw new Error(
                             `Invalid item at index ${index}: \`total_price\` must be a number > 0.`,
                         );
@@ -78,6 +88,7 @@ export default factories.createCoreController(
                         unique_code: uniqueCode,
                         total_order: itemTotalOrder,
                         total_price: itemTotalPrice,
+                        description,
                     };
                 });
 
@@ -124,7 +135,10 @@ export default factories.createCoreController(
                     meta: {},
                 };
             } catch (error) {
-                if (error instanceof Error && error.message.startsWith('Invalid item')) {
+                if (
+                    error instanceof Error &&
+                    error.message.startsWith('Invalid item')
+                ) {
                     return ctx.badRequest(error.message);
                 }
 
@@ -139,7 +153,8 @@ export default factories.createCoreController(
         },
         async capturePaypalPayment(ctx) {
             try {
-                const body = (ctx.request.body ?? {}) as CapturePaypalPaymentBody;
+                const body = (ctx.request.body ??
+                    {}) as CapturePaypalPaymentBody;
                 const orderId = (body.order_id ?? body.token ?? '').trim();
 
                 if (!orderId) {
@@ -162,8 +177,90 @@ export default factories.createCoreController(
                     meta: {},
                 };
             } catch (error) {
-                strapi.log.error('capturePaypalPayment controller failed.', error);
-                return ctx.internalServerError('Failed to capture PayPal payment.');
+                strapi.log.error(
+                    'capturePaypalPayment controller failed.',
+                    error,
+                );
+                return ctx.internalServerError(
+                    'Failed to capture PayPal payment.',
+                );
+            }
+        },
+        async createBankTransferDonation(ctx) {
+            try {
+                const body = (ctx.request.body ??
+                    {}) as CreateBankTransferDonationBody;
+                const itemsFromBody = Array.isArray(body.items)
+                    ? body.items
+                    : [];
+
+                const itemsSource =
+                    itemsFromBody.length > 0
+                        ? itemsFromBody
+                        : [
+                              {
+                                  donation_code: body.donation_code,
+                                  total_order: body.total_order,
+                                  total_price: body.total_price,
+                                  description: body.description,
+                              },
+                          ];
+
+                const normalizedItems = itemsSource.map((item, index) => {
+                    const donationCode = (item.donation_code ?? '').trim();
+                    const totalOrder = toNumber(item.total_order);
+                    const totalPrice = toNumber(item.total_price);
+
+                    if (!donationCode) {
+                        throw new Error(
+                            `Invalid bank-transfer item at index ${index}: \`donation_code\` is required.`,
+                        );
+                    }
+
+                    if (!Number.isFinite(totalOrder) || totalOrder <= 0) {
+                        throw new Error(
+                            `Invalid bank-transfer item at index ${index}: \`total_order\` must be a number > 0.`,
+                        );
+                    }
+
+                    if (!Number.isFinite(totalPrice) || totalPrice <= 0) {
+                        throw new Error(
+                            `Invalid bank-transfer item at index ${index}: \`total_price\` must be a number > 0.`,
+                        );
+                    }
+
+                    return {
+                        donation_code: donationCode,
+                        total_order: totalOrder,
+                        total_price: totalPrice,
+                        description: item.description?.trim() || '',
+                    };
+                });
+
+                const savedDonation = await strapi
+                    .service('api::donation-package.donation-package')
+                    .createBankTransferDonation({
+                        items: normalizedItems,
+                    });
+
+                return {
+                    data: savedDonation,
+                    meta: {},
+                };
+            } catch (error) {
+                strapi.log.error(
+                    'createBankTransferDonation controller failed.',
+                    error,
+                );
+                if (
+                    error instanceof Error &&
+                    error.message.startsWith('Invalid bank-transfer item')
+                ) {
+                    return ctx.badRequest(error.message);
+                }
+                return ctx.internalServerError(
+                    'Failed to create bank transfer donation.',
+                );
             }
         },
     }),

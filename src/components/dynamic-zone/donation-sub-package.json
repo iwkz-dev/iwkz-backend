@@ -1,7 +1,7 @@
 {
   "collectionName": "components_dynamic_zone_donation_sub_packages",
   "info": {
-    "displayName": "DonationSubPackage"
+    "displayName": "DonationItem"
   },
   "options": {},
   "attributes": {
@@ -19,6 +19,11 @@
       "type": "string",
       "required": true,
       "unique": true
+    },
+    "requireDonatorInfo": {
+      "type": "boolean",
+      "required": false,
+      "default": false
     }
   },
   "config": {}

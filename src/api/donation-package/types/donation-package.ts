@@ -28,9 +28,16 @@ export interface DonationStats {
 }
 
 export interface NocoDonationRecord {
+    capture_id?: string;
     donation_code?: string;
     total_order?: number | string;
     total_price?: number | string;
+    description?: string;
+    is_completed?: boolean;
+    transaction_id?: string;
+    id?: string | number;
+    updated_at?: string;
+    created_at?: string;
 }
 
 export interface NocoDonationResponse {
@@ -41,6 +48,7 @@ export class PaypalPaymentItemInput {
     unique_code!: string;
     total_order!: number;
     total_price!: number;
+    description?: string;
 }
 
 export class CreatePaypalPaymentInput {
@@ -56,6 +64,7 @@ export class CreatePaypalPaymentBody {
         unique_code?: string;
         total_order?: number | string;
         total_price?: number | string;
+        description?: string;
     }>;
 }
 
@@ -88,6 +97,30 @@ export class CapturePaypalPaymentInput {
     order_id!: string;
 }
 
+export class CreateBankTransferDonationBody {
+    donation_code?: string;
+    total_order?: number | string;
+    total_price?: number | string;
+    description?: string;
+    items?: Array<{
+        donation_code?: string;
+        total_order?: number | string;
+        total_price?: number | string;
+        description?: string;
+    }>;
+}
+
+export class BankTransferDonationItemInput {
+    donation_code!: string;
+    total_order!: number;
+    total_price!: number;
+    description?: string;
+}
+
+export class CreateBankTransferDonationInput {
+    items!: BankTransferDonationItemInput[];
+}
+
 export interface PaypalCapture {
     id?: string;
     status?: string;
@@ -103,6 +136,7 @@ export interface PaypalCaptureOrderResponse {
     status?: string;
     purchase_units?: Array<{
         custom_id?: string;
+        description?: string;
         payments?: {
             captures?: PaypalCapture[];
         };

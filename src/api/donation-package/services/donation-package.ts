@@ -7,6 +7,7 @@ import axios from 'axios';
 import type { Core } from '@strapi/strapi';
 import type {
     CapturePaypalPaymentInput,
+    CreateBankTransferDonationInput,
     CreatePaypalPaymentInput,
     DonationPackageEntity,
     DonationPackageItem,
@@ -29,6 +30,10 @@ const DONATION_TABLE_ID = process.env.IWKZ_NOCODB_TABLE_DONATIONPACKAGE;
 const PAYPAL_BASE_URL =
     process.env.PAYPAL_BASE_URL ?? 'https://api-m.sandbox.paypal.com';
 const PAYPAL_CURRENCY = process.env.PAYPAL_CURRENCY ?? 'EUR';
+
+const generateDonationCaptureId = (): string => {
+    return `paypal-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+};
 
 const toNumber = (value: unknown): number => {
     if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
@@ -191,8 +196,12 @@ const getPaypalRedirectUrls = async (
 
         const returnUrl = paymentConfig?.paypal?.returnUrl?.trim();
         const cancelUrl = paymentConfig?.paypal?.cancelUrl?.trim();
-        const fixFeeMinor = toNumber(paymentConfig?.paypal?.fixFee);
-        const percentageFeeBps = toNumber(paymentConfig?.paypal?.percentageFee);
+
+        const fixFeeAmount = toNumber(paymentConfig?.paypal?.fixFee); // value is in currency units (e.g., EUR)
+        const percentageFee = toNumber(paymentConfig?.paypal?.percentageFee); // value is in percent (e.g., 2.5 means 2.5%)
+
+        const fixFeeMinor = Math.round(fixFeeAmount * 100); // convert to minor units
+        const percentageFeeBps = Math.round(percentageFee * 100); // convert percent to basis points
 
         if (!returnUrl || !cancelUrl) {
             strapi.log.error(
@@ -207,6 +216,8 @@ const getPaypalRedirectUrls = async (
             percentageFeeBps >= 10000
         ) {
             strapi.log.error('Invalid PayPal fee configuration detected.', {
+                fixFeeAmount,
+                percentageFee,
                 fixFeeMinor,
                 percentageFeeBps,
             });
@@ -249,17 +260,26 @@ const createPaypalOrder = async (
         throw new Error('Unable to calculate PayPal gross amount.');
     }
 
-    const description = payload.items
-        .map((item) => item.unique_code)
-        .join(',')
-        .slice(0, 127);
-    const customId = payload.items
-        .map(
-            (item) =>
-                `${item.unique_code}:${item.total_order}:${item.total_price}`,
-        )
-        .join('|')
-        .slice(0, 127);
+    const donationCaptureId = generateDonationCaptureId();
+
+    const descriptionMap = payload.items.reduce(
+        (acc, item) => {
+            const code = item.unique_code?.trim();
+            if (!code) return acc;
+
+            const desc = item.description?.trim();
+            if (!acc[code]) acc[code] = [];
+            if (desc) acc[code].push(desc);
+            return acc;
+        },
+        {} as Record<string, string[]>,
+    );
+
+    const description = Object.entries(descriptionMap)
+        .map(([code, descriptions]) => `${code}[${descriptions.join(',')}]`)
+        .join(',');
+
+    const customId = donationCaptureId;
     const paypalItems = payload.items.map((item) => ({
         name: `${item.unique_code} x${item.total_order}`.slice(0, 127),
         quantity: '1',
@@ -332,6 +352,12 @@ const createPaypalOrder = async (
             throw new Error('PayPal approval link is unavailable.');
         }
 
+        await savePendingDonationToNocoDB(
+            strapi,
+            donationCaptureId,
+            payload.items,
+        );
+
         return {
             orderId: response.data.id,
             approvalUrl,
@@ -343,6 +369,29 @@ const createPaypalOrder = async (
         strapi.log.error('Failed to create PayPal order.', error);
         throw new Error('Unable to create PayPal payment link.');
     }
+};
+
+const parseDescriptionsFromPaypal = (
+    description: string | undefined,
+): Map<string, string[]> => {
+    const map = new Map<string, string[]>();
+    if (!description) return map;
+
+    const regex = /([^,\[\]]+)\[([^\]]*)\]/g;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(description)) !== null) {
+        const code = match[1]?.trim();
+        if (!code) continue;
+
+        const descs = match[2]
+            .split(',')
+            .map((d) => d.trim())
+            .filter((d) => d.length > 0);
+
+        map.set(code, descs);
+    }
+
+    return map;
 };
 
 const parseItemsFromCustomId = (
@@ -373,13 +422,14 @@ const parseItemsFromCustomId = (
         );
 };
 
-const saveCapturedDonationToNocoDB = async (
+const savePendingDonationToNocoDB = async (
     strapi: Core.Strapi,
     captureId: string,
     items: Array<{
         unique_code: string;
         total_order: number;
         total_price: number;
+        description?: string;
     }>,
 ): Promise<void> => {
     const nocoBaseUrl = process.env.IWKZ_NOCODB_API;
@@ -394,11 +444,11 @@ const saveCapturedDonationToNocoDB = async (
 
     const apiUrl = `${nocoBaseUrl}/tables/${DONATION_TABLE_ID}/records`;
     const where = encodeURIComponent(`(capture_id,eq,${captureId})`);
-    const checkUrl = `${apiUrl}?where=${where}&limit=1&shuffle=0&offset=0`;
+    const listUrl = `${apiUrl}?where=${where}&limit=100&shuffle=0&offset=0`;
 
     try {
         const existingResponse = await axios.get<NocoDonationResponse>(
-            checkUrl,
+            listUrl,
             {
                 headers: {
                     accept: 'application/json',
@@ -408,15 +458,25 @@ const saveCapturedDonationToNocoDB = async (
         );
 
         const existingRows = existingResponse.data?.list ?? [];
-        if (existingRows.length > 0) {
-            strapi.log.info(
-                `Capture ${captureId} already persisted in NocoDB. Skipping insert.`,
-            );
-            return;
+        for (const row of existingRows) {
+            const rowId =
+                (row as { id?: unknown; Id?: unknown }).Id ??
+                (row as { id?: unknown; Id?: unknown }).id;
+            if (!rowId) continue;
+
+            await axios.delete(`${apiUrl}/${rowId}`, {
+                headers: {
+                    accept: 'application/json',
+                    'xc-token': nocoToken,
+                },
+            });
         }
     } catch (error) {
-        strapi.log.error('Failed to check capture id in NocoDB.', error);
-        throw new Error('Failed to verify donation capture state.');
+        strapi.log.error(
+            'Failed to prepare NocoDB rows for donation capture.',
+            error,
+        );
+        throw new Error('Failed to prepare donation capture storage.');
     }
 
     const records = items.map((item) => ({
@@ -424,6 +484,169 @@ const saveCapturedDonationToNocoDB = async (
         donation_code: item.unique_code,
         total_order: item.total_order,
         total_price: item.total_price,
+        description: item.description ?? '',
+        is_completed: false,
+        transaction_id: '',
+    }));
+
+    try {
+        for (const record of records) {
+            await axios.post(apiUrl, record, {
+                headers: {
+                    accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'xc-token': nocoToken,
+                },
+            });
+        }
+    } catch (error) {
+        strapi.log.error('Failed to save pending donation to NocoDB.', error);
+        throw new Error('Failed to persist pending donation.');
+    }
+};
+
+const fetchDonationItemsFromNocoDB = async (
+    strapi: Core.Strapi,
+    captureId: string,
+): Promise<
+    Array<{
+        unique_code: string;
+        total_order: number;
+        total_price: number;
+        description?: string;
+    }>
+> => {
+    const nocoBaseUrl = process.env.IWKZ_NOCODB_API;
+    const nocoToken = process.env.IWKZ_NOCODB_API_TOKEN;
+
+    if (!nocoBaseUrl || !nocoToken || !DONATION_TABLE_ID) {
+        return [];
+    }
+
+    const apiUrl = `${nocoBaseUrl}/tables/${DONATION_TABLE_ID}/records`;
+    const where = encodeURIComponent(`(capture_id,eq,${captureId})`);
+    const listUrl = `${apiUrl}?where=${where}&limit=100&shuffle=0&offset=0`;
+
+    try {
+        const response = await axios.get<NocoDonationResponse>(listUrl, {
+            headers: {
+                accept: 'application/json',
+                'xc-token': nocoToken,
+            },
+        });
+
+        const rows = response.data?.list ?? [];
+        return rows
+            .map((row) => ({
+                unique_code: row.donation_code?.trim() ?? '',
+                total_order: toNumber(row.total_order),
+                total_price: toNumber(row.total_price),
+                description: row.description ?? '',
+            }))
+            .filter(
+                (item) =>
+                    item.unique_code.length > 0 &&
+                    item.total_order > 0 &&
+                    item.total_price > 0,
+            );
+    } catch (error) {
+        strapi.log.error('Failed to fetch donation items from NocoDB.', error);
+        return [];
+    }
+};
+
+const markDonationCaptureCompletedInNocoDB = async (
+    strapi: Core.Strapi,
+    captureId: string,
+    transactionId: string,
+): Promise<void> => {
+    const nocoBaseUrl = process.env.IWKZ_NOCODB_API;
+    const nocoToken = process.env.IWKZ_NOCODB_API_TOKEN;
+
+    if (!nocoBaseUrl || !nocoToken || !DONATION_TABLE_ID) {
+        strapi.log.error(
+            'NocoDB configuration is incomplete for donation capture sync.',
+        );
+        throw new Error('NocoDB configuration is incomplete.');
+    }
+
+    const apiUrl = `${nocoBaseUrl}/tables/${DONATION_TABLE_ID}/records`;
+    const where = encodeURIComponent(`(capture_id,eq,${captureId})`);
+    const listUrl = `${apiUrl}?where=${where}&limit=100&shuffle=0&offset=0`;
+
+    try {
+        const response = await axios.get<NocoDonationResponse>(listUrl, {
+            headers: {
+                accept: 'application/json',
+                'xc-token': nocoToken,
+            },
+        });
+
+        const rows = response.data?.list ?? [];
+        if (rows.length === 0) {
+            strapi.log.warn('No NocoDB rows found for capture id.', {
+                captureId,
+            });
+            return;
+        }
+
+        for (const row of rows) {
+            const { created_at, updated_at, ...restData } = row;
+            await axios.patch(
+                `${apiUrl}`,
+                {
+                    ...restData,
+                    is_completed: 1,
+                    transaction_id: transactionId,
+                },
+                {
+                    headers: {
+                        accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        'xc-token': nocoToken,
+                    },
+                },
+            );
+        }
+    } catch (error) {
+        strapi.log.error(
+            'Failed to mark donation capture as completed in NocoDB.',
+            error,
+        );
+        throw new Error('Failed to update donation capture status.');
+    }
+};
+
+const saveBankTransferDonationToNocoDB = async (
+    strapi: Core.Strapi,
+    payload: CreateBankTransferDonationInput,
+): Promise<void> => {
+    const nocoBaseUrl = process.env.IWKZ_NOCODB_API;
+    const nocoToken = process.env.IWKZ_NOCODB_API_TOKEN;
+    const date = new Date();
+    const captureId =
+        'bankTransfer-' +
+        date.getFullYear() +
+        '_' +
+        (date.getMonth() + 1) +
+        '_' +
+        date.getDate();
+
+    if (!nocoBaseUrl || !nocoToken || !DONATION_TABLE_ID) {
+        strapi.log.error(
+            'NocoDB configuration is incomplete for bank transfer donation sync.',
+        );
+        throw new Error('NocoDB configuration is incomplete.');
+    }
+
+    const apiUrl = `${nocoBaseUrl}/tables/${DONATION_TABLE_ID}/records`;
+    const records = payload.items.map((item) => ({
+        capture_id: captureId,
+        donation_code: item.donation_code,
+        total_order: item.total_order,
+        total_price: item.total_price,
+        description: item.description,
+        is_completed: true,
     }));
 
     try {
@@ -475,9 +698,28 @@ const capturePaypalOrder = async (
         const firstPurchaseUnit = response.data?.purchase_units?.[0];
         const capture = firstPurchaseUnit?.payments?.captures?.[0];
         const finalStatus = capture?.status ?? captureStatus;
-        const captureId = capture?.id ?? '';
-        const customId = capture?.custom_id ?? firstPurchaseUnit?.custom_id;
-        const items = parseItemsFromCustomId(customId);
+        const paypalTransactionId = capture?.id ?? '';
+        const donationCaptureId =
+            capture?.custom_id ?? firstPurchaseUnit?.custom_id ?? '';
+        const descriptionMap = parseDescriptionsFromPaypal(
+            firstPurchaseUnit?.description,
+        );
+        let items = await fetchDonationItemsFromNocoDB(
+            strapi,
+            donationCaptureId,
+        );
+
+        if (items.length === 0) {
+            items = parseItemsFromCustomId(donationCaptureId);
+        }
+
+        const itemsWithDescription = items.map((item) => ({
+            ...item,
+            description:
+                (item.description ?? '').trim() ||
+                descriptionMap.get(item.unique_code)?.join(',') ||
+                '',
+        }));
 
         if (finalStatus !== 'COMPLETED') {
             strapi.log.warn('PayPal capture is not completed.', {
@@ -487,29 +729,39 @@ const capturePaypalOrder = async (
             throw new Error('PayPal capture is not completed.');
         }
 
-        if (!captureId) {
+        if (!paypalTransactionId) {
             strapi.log.error('PayPal capture response missing capture id.', {
                 orderId,
             });
             throw new Error('PayPal capture id is missing.');
         }
 
-        if (items.length === 0) {
+        if (!donationCaptureId) {
+            strapi.log.error('PayPal capture response missing custom id.', {
+                orderId,
+            });
+            throw new Error('PayPal donation capture id is missing.');
+        }
+
+        if (itemsWithDescription.length === 0) {
             strapi.log.error('No donation items found in PayPal custom_id.', {
                 orderId,
-                captureCustomId: capture?.custom_id,
-                purchaseUnitCustomId: firstPurchaseUnit?.custom_id,
+                captureCustomId: donationCaptureId,
             });
             throw new Error('No donation items found for this payment.');
         }
 
-        await saveCapturedDonationToNocoDB(strapi, captureId, items);
+        await markDonationCaptureCompletedInNocoDB(
+            strapi,
+            donationCaptureId,
+            paypalTransactionId,
+        );
 
         return {
             orderId,
-            captureId,
+            captureId: paypalTransactionId,
             status: finalStatus,
-            items,
+            items: itemsWithDescription,
         };
     } catch (error) {
         strapi.log.error('Failed to capture PayPal order.', error);
@@ -573,6 +825,20 @@ const donationPackageService = ({ strapi }: { strapi: Core.Strapi }) => ({
             return await capturePaypalOrder(strapi, payload);
         } catch (error) {
             strapi.log.error('Failed to handle PayPal capture.', error);
+            throw error;
+        }
+    },
+    async createBankTransferDonation(payload: CreateBankTransferDonationInput) {
+        try {
+            await saveBankTransferDonationToNocoDB(strapi, payload);
+            return {
+                items: payload.items,
+            };
+        } catch (error) {
+            strapi.log.error(
+                'Failed to handle bank transfer donation creation.',
+                error,
+            );
             throw error;
         }
     },

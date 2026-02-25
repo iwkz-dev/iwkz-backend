@@ -14,6 +14,7 @@ Endpoints:
 - `GET /donation-package` (customized payload from service)
 - `POST /donation-package/paypal`
 - `POST /donation-package/paypal/capture`
+- `POST /donation-package/bank-transfer`
 
 Detailed docs:
 - `docs/api/donation-package-paypal.md`
@@ -22,6 +23,7 @@ Behavior:
 - `GET /donation-package` returns package-level information.
 - Donation options now live in `donationPackages[].donationItems`.
 - Donation stats are attached per `donationItems[].uniqueCode`.
+- `POST /donation-package/bank-transfer` stores manual bank transfer donation rows to NocoDB.
 
 ## Jadwal Shalat
 
