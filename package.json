@@ -2,7 +2,7 @@
     "name": "iwkz-backend",
     "version": "0.1.0",
     "private": true,
-    "description": "A Strapi application",
+    "description": "IWKZ API built with Strapi",
     "scripts": {
         "build": "strapi build",
         "console": "strapi console",
@@ -15,11 +15,11 @@
         "upgrade:dry": "npx @strapi/upgrade latest --dry"
     },
     "dependencies": {
-        "@strapi/plugin-cloud": "5.16.1",
-        "@strapi/plugin-users-permissions": "5.16.1",
+        "@strapi/plugin-cloud": "5.37.1",
+        "@strapi/plugin-users-permissions": "5.37.1",
         "@strapi/provider-email-nodemailer": "^5.17.0",
         "@strapi/provider-upload-cloudinary": "^5.17.0",
-        "@strapi/strapi": "5.16.1",
+        "@strapi/strapi": "5.37.1",
         "axios": "^1.10.0",
         "fs-extra": "^10.0.0",
         "mime-types": "^2.1.27",
