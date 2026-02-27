@@ -2,12 +2,13 @@
  * prs-donation-progress controller
  */
 
-import { factories } from "@strapi/strapi";
-import { FinanceCashFlowType } from "../../financereport/controllers/types";
-import { getPRSReport } from "../../financereport/services/financereport";
+import { factories } from '@strapi/strapi';
+import { FinanceCashFlowType } from '../../financereport/controllers/types';
+import { getPRSReport } from '../../financereport/services/financereport';
 
 const sumPRSYear = async (year: number): Promise<number> => {
   const prsReport = await getPRSReport(year);
+
   const monthlyData = prsReport?.monthlyData ?? [];
 
   return monthlyData.reduce((yearTotal, month) => {
@@ -28,30 +29,24 @@ const sumPRSYear = async (year: number): Promise<number> => {
 };
 
 export default factories.createCoreController(
-  "api::prs-donation-progress.prs-donation-progress",
+  'api::prs-donation-progress.prs-donation-progress',
   ({ strapi }) => ({
     async find(ctx) {
+      const { data } = await super.find(ctx);
+
       let finalPRS;
 
       try {
         const currentYear = new Date().getFullYear();
-        const currentDonation = await sumPRSYear(currentYear);
+        const currentDonation = await sumPRSYear(currentYear - 1);
 
-        const prs = await strapi
-          .documents("api::prs-donation-progress.prs-donation-progress")
-          .findFirst();
-
-        finalPRS = await strapi
-          .documents("api::prs-donation-progress.prs-donation-progress")
-          .update({
-            documentId: prs?.documentId,
-            data: { currentDonation: currentDonation },
-          });
-
-        console.log("updatedPRS", finalPRS);
+        finalPRS = {
+          ...data,
+          currentDonation: parseFloat(currentDonation.toFixed(2)),
+        };
       } catch (error) {
         strapi.log.error(
-          "Failed to hydrate PRS donation progress from NocoDB",
+          'Failed to hydrate PRS donation progress from NocoDB',
           error,
         );
       }
