@@ -2,56 +2,30 @@
  * prs-donation-progress controller
  */
 
-import { factories } from '@strapi/strapi';
-import { FinanceCashFlowType } from '../../financereport/controllers/types';
-import { getPRSReport } from '../../financereport/services/financereport';
-
-const sumPRSYear = async (year: number): Promise<number> => {
-  const prsReport = await getPRSReport(year);
-
-  const monthlyData = prsReport?.monthlyData ?? [];
-
-  return monthlyData.reduce((yearTotal, month) => {
-    const inflowTotals =
-      month?.[FinanceCashFlowType.INFLOW]?.ledgerData?.reduce(
-        (sum, ledger) => sum + (ledger.total || 0),
-        0,
-      ) ?? 0;
-
-    const outflowTotals =
-      month?.[FinanceCashFlowType.OUTFLOW]?.ledgerData?.reduce(
-        (sum, ledger) => sum + (ledger.total || 0),
-        0,
-      ) ?? 0;
-
-    return yearTotal + inflowTotals + outflowTotals; // outflows already negative
-  }, 0);
-};
+import { factories } from "@strapi/strapi";
 
 export default factories.createCoreController(
-  'api::prs-donation-progress.prs-donation-progress',
+  "api::prs-donation-progress.prs-donation-progress",
   ({ strapi }) => ({
     async find(ctx) {
-      const { data } = await super.find(ctx);
+      const { data, meta } = await super.find(ctx);
 
-      let finalPRS;
+      if (!data) return { data, meta };
 
       try {
-        const currentYear = new Date().getFullYear();
-        const currentDonation = await sumPRSYear(currentYear - 1);
+        const prsData = await strapi
+          .service("api::prs-donation-progress.prs-donation-progress")
+          .getPRSProgressWithCurrentDonation();
 
-        finalPRS = {
-          ...data,
-          currentDonation: parseFloat(currentDonation.toFixed(2)),
-        };
+        data.currentDonation = prsData.currentDonation;
       } catch (error) {
         strapi.log.error(
-          'Failed to hydrate PRS donation progress from NocoDB',
+          "Failed to enhance PRS donation progress response",
           error,
         );
       }
 
-      return finalPRS;
+      return { data, meta };
     },
   }),
 );
