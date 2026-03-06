@@ -60,9 +60,10 @@ const buildStatsMap = (
 
     records.forEach((record) => {
         const donationCode = record.donation_code?.trim();
-        if (!donationCode) return;
+        if (!donationCode || !record.is_completed) return;
 
         const currentStats = statsMap.get(donationCode) ?? ZERO_STATS;
+
         statsMap.set(donationCode, {
             total_order:
                 currentStats.total_order + toNumber(record.total_order),
