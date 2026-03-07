@@ -5,7 +5,15 @@ export default [
     'strapi::cors',
     'strapi::poweredBy',
     'strapi::query',
-    'strapi::body',
+    {
+        name: 'strapi::body',
+        config: {
+            multipart: true,
+            formLimit: '5mb',
+            jsonLimit: '5mb',
+            includeUnparsed: true, // keep raw body for PayPal IPN verification
+        },
+    },
     'strapi::session',
     'strapi::favicon',
     'strapi::public',
