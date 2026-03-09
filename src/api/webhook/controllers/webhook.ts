@@ -148,6 +148,8 @@ export default {
             is_completed: 1,
         };
 
+        console.log({ payload, body });
+
         try {
             const existing = await findExisting(captureId);
 
