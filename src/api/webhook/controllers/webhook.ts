@@ -117,20 +117,19 @@ export default {
         let captureId: string | undefined;
         let totalPrice = 0;
         let donationCode: string | undefined;
+        const webhookCaptureId = `webhook-${txnId}`;
 
-        if (isOrderBased && body.custom) {
-            captureId = body.custom;
+        if (isOrderBased) {
+            captureId = body.custom || webhookCaptureId;
             totalPrice = parseFloat(body.mc_gross_1 || '0');
             donationCode = body.item_name1;
         } else {
-            captureId = `webhook-${txnId}`;
+            captureId = webhookCaptureId;
             const gross = parseFloat(body.mc_gross || '0');
             const fee = parseFloat(body.mc_fee || '0');
             totalPrice = gross - fee;
             donationCode = body.memo;
         }
-
-        console.log({ txnId, captureId, isOrderBased });
 
         if (!captureId) {
             strapi.log.warn('[paypal-webhook] Missing capture_id', body);
