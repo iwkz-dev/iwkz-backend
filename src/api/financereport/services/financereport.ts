@@ -16,6 +16,10 @@ import {
     DBFinanceClosingBalance,
 } from '../controllers/types';
 
+type DonationPackageRecord = {
+    total_price?: number | null;
+};
+
 const API_URL = `${process.env.IWKZ_NOCODB_API}/`;
 const DEFAULT_DATA_LIMIT = 'limit=1000';
 
@@ -36,7 +40,7 @@ const getLedger = async (): Promise<DBLedgerData[]> => {
 
 const getOperationalReport = async (
     year: number,
-    month?: number
+    month?: number,
 ): Promise<FinanceDataApiResponse> => {
     const monthFilter = month ? `~and(month,eq,${month}` : '';
     const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_KEUANGAN_OPERASIONAL}/records?where=(year,eq,${year})${monthFilter}&${DEFAULT_DATA_LIMIT}`;
@@ -61,7 +65,7 @@ const getOperationalReport = async (
 
 const getPRSReport = async (
     year: number,
-    month?: number
+    month?: number,
 ): Promise<FinanceDataApiResponse> => {
     const monthFilter = month ? `~and(month,eq,${month}` : '';
     const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_KEUANGAN_PRS}/records?where=(year,eq,${year})${monthFilter}&${DEFAULT_DATA_LIMIT}`;
@@ -85,7 +89,7 @@ const getPRSReport = async (
 };
 
 const getBalanceSummaries = async (
-    year: number
+    year: number,
 ): Promise<FinanceSummaryApiResponse> => {
     const apiUriCashFlow = `tables/${process.env.IWKZ_NOCODB_TABLE_KEUANGAN_CASHFLOW}/records?where=(year,eq,${year})&${DEFAULT_DATA_LIMIT}`;
     const apiClosingBalanceLastYear = `tables/${process.env.IWKZ_NOCODB_TABLE_KEUANGAN_CLOSINGBALANCE}/records?where=(year,eq,${year - 1})&${DEFAULT_DATA_LIMIT}`;
@@ -101,7 +105,7 @@ const getBalanceSummaries = async (
     try {
         resultCashflow = await sendGetRequest(apiUriCashFlow);
         resultClosingBalanceLastYear = await sendGetRequest(
-            apiClosingBalanceLastYear
+            apiClosingBalanceLastYear,
         );
 
         resultCashflow.forEach(({ month, income, outcome, data_type }) => {
@@ -120,22 +124,20 @@ const getBalanceSummaries = async (
         strapi.log.error(error);
     }
 
-    console.log(resultCashflow);
-
     return {
         year,
         [FinanceReportType.OPERASIONAL]: {
             monthlyData: operationalMonthlySummary,
             lastyearIncomeBalance: getClosingBalanceValue(
                 resultClosingBalanceLastYear,
-                FinanceReportType.OPERASIONAL
+                FinanceReportType.OPERASIONAL,
             ),
         },
         [FinanceReportType.PRS]: {
             monthlyData: prsMonthlySummary,
             lastyearIncomeBalance: getClosingBalanceValue(
                 resultClosingBalanceLastYear,
-                FinanceReportType.PRS
+                FinanceReportType.PRS,
             ),
         },
     };
@@ -143,10 +145,10 @@ const getBalanceSummaries = async (
 
 const getClosingBalanceValue = (
     data: DBFinanceClosingBalance[],
-    financeReport: FinanceReportType
+    financeReport: FinanceReportType,
 ) => {
     const closingBalanceData: DBFinanceClosingBalance = data.find(
-        ({ data_type }) => data_type === financeReport
+        ({ data_type }) => data_type === financeReport,
     );
     return closingBalanceData.total_income || 0;
 };
@@ -178,7 +180,7 @@ const evaluateMonthlyData = (data: DBFinanceData[]): FinanceMonthlyData[] => {
         const monthData = monthlyDataMap.get(month)!;
 
         const ledgerIndex = monthData[cashFlowType].ledgerData.findIndex(
-            (item) => item.ledgerId === ledger_id
+            (item) => item.ledgerId === ledger_id,
         );
 
         if (ledgerIndex >= 0) {
@@ -192,7 +194,7 @@ const evaluateMonthlyData = (data: DBFinanceData[]): FinanceMonthlyData[] => {
     });
 
     return Array.from(monthlyDataMap.values()).sort(
-        (a, b) => a.month - b.month
+        (a, b) => a.month - b.month,
     );
 };
 
@@ -209,7 +211,7 @@ const sendGetRequest = async (apiUri: string) => {
                     accept: 'application/json',
                     'xc-token': process.env.IWKZ_NOCODB_API_TOKEN,
                 },
-            }
+            },
         );
         const responseData = (await response.data) as DBFinanceDataResponse;
 
@@ -217,7 +219,7 @@ const sendGetRequest = async (apiUri: string) => {
         data.push(...responseData.list);
 
         strapi.log.info(
-            `[sendGetRequest] isLastData: ${isLastData}, dataLenght: ${data.length}, pageCounter: ${pageCounter}`
+            `[sendGetRequest] isLastData: ${isLastData}, dataLenght: ${data.length}, pageCounter: ${pageCounter}`,
         );
 
         pageCounter++;
@@ -226,4 +228,34 @@ const sendGetRequest = async (apiUri: string) => {
     return data;
 };
 
-export { getOperationalReport, getPRSReport, getLedger, getBalanceSummaries };
+const getDonationPackageTotalPrice = async (
+    donationCode: string,
+): Promise<number> => {
+    const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_DONATIONPACKAGE}/records?where=(donation_code,eq,${encodeURIComponent(
+        donationCode,
+    )})&${DEFAULT_DATA_LIMIT}`;
+
+    strapi.log.info(`apiUri: ${apiUri}`);
+
+    try {
+        const result = (await sendGetRequest(
+            apiUri,
+        )) as DonationPackageRecord[];
+
+        return result.reduce((total, { total_price }) => {
+            const price = Number(total_price) || 0;
+            return total + price;
+        }, 0);
+    } catch (error) {
+        strapi.log.error(error);
+        return 0;
+    }
+};
+
+export {
+    getOperationalReport,
+    getPRSReport,
+    getLedger,
+    getBalanceSummaries,
+    getDonationPackageTotalPrice,
+};
