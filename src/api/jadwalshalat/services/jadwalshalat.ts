@@ -3,15 +3,14 @@
  */
 
 import axios from 'axios';
-import { promises as fs } from 'fs';
-import path from 'path';
 import {
     IslamicFinderApiResponse,
     NocoDBPrayingTimeResponse,
     ResponseOutput,
 } from '../controllers/types';
+import { driveCache } from '../../../helpers/googleDriveCache';
 
-const CACHE_DIR = path.join(process.cwd(), '.cache', 'hijriah-schedules');
+const DRIVE_CACHE_FOLDER_ID = process.env.GOOGLE_DRIVE_CACHE_HIJRIAH_DATE;
 const monthNames = [
     'January',
     'February',
@@ -35,7 +34,7 @@ export const getJadwalShalatToday = async () => {
 
     const data = await getJadwalShalatByMonthAndYear(month, year);
     const todayHijriahData = data.find(
-        (d) => d.day === date && d.month === month
+        (d) => d.day === date && d.month === month,
     );
 
     return getResponseData(todayHijriahData);
@@ -43,7 +42,7 @@ export const getJadwalShalatToday = async () => {
 
 export const getJadwalShalatByMonthAndYear = async (
     month: number,
-    year: number
+    year: number,
 ): Promise<ResponseOutput[]> => {
     const results: ResponseOutput[] = [];
     const hijriahData = await getHijriahDatesByMonth(month, year);
@@ -63,7 +62,7 @@ export const getJadwalShalatByMonthAndYear = async (
         const strDay = day < 10 ? `0${day}` : day;
         const strMonth = month < 10 ? `0${month}` : month;
         const prayingTime = prayingTimeList.find(
-            (d) => d.date === `${strDay}.${strMonth}`
+            (d) => d.date === `${strDay}.${strMonth}`,
         );
 
         if (day < secondaryMonthChangedate) {
@@ -85,7 +84,7 @@ export const getJadwalShalatByMonthAndYear = async (
                 hijriahMonth,
                 hijriahYear,
                 ...prayingTime,
-            })
+            }),
         );
     }
 
@@ -94,28 +93,38 @@ export const getJadwalShalatByMonthAndYear = async (
 
 const getHijriahDatesByMonth = async (
     month: number,
-    year: number
+    year: number,
 ): Promise<IslamicFinderApiResponse> => {
     if (month < 1 || month > 12) {
         throw new Error('Bulan harus antara 1 dan 12.');
     }
-    const cacheKey = `${year}-${month}`;
-    const cacheFilePath = path.join(CACHE_DIR, `${cacheKey}.json`);
+    const monthKey = month < 10 ? `0${month}` : `${month}`;
+    const cacheFileName = `${year}-${monthKey}.json`;
 
-    //check the data on the cache
-    try {
-        const cachedData = await fs.readFile(cacheFilePath, 'utf-8');
-        console.log(
-            `CACHE HIT: Data untuk ${cacheKey} ditemukan. Mengambil dari file.`
+    if (!DRIVE_CACHE_FOLDER_ID) {
+        strapi.log.warn(
+            'GOOGLE_DRIVE_CACHE_HIJRIAH_DATE is not set. Skipping Google Drive cache.',
         );
-        return JSON.parse(cachedData);
-    } catch (error) {
-        if (error.code !== 'ENOENT') {
-            console.error('Gagal membaca cache:', error);
+    } else {
+        try {
+            const cachedData = await driveCache.read<IslamicFinderApiResponse>(
+                DRIVE_CACHE_FOLDER_ID,
+                cacheFileName,
+            );
+
+            if (cachedData) {
+                strapi.log.info(
+                    `CACHE HIT (Drive): Data untuk ${cacheFileName} ditemukan. Mengambil dari Google Drive.`,
+                );
+                return cachedData;
+            }
+
+            strapi.log.info(
+                `CACHE MISS (Drive): Data untuk ${cacheFileName} tidak ditemukan. Mengambil dari API.`,
+            );
+        } catch (error) {
+            strapi.log.error('Gagal membaca cache dari Google Drive:', error);
         }
-        console.log(
-            `CACHE MISS: Data untuk ${cacheKey} tidak ditemukan. Mengambil dari API.`
-        );
     }
 
     //make an API request if data not exist on cache
@@ -123,28 +132,38 @@ const getHijriahDatesByMonth = async (
     const rootApiUrl = process.env.HIJRIAH_API_URL;
     const apiUrl = `${rootApiUrl}&month=${monthName}&year=${year}`;
 
-    let apiResponse: IslamicFinderApiResponse;
+    let apiResponse: IslamicFinderApiResponse = {} as IslamicFinderApiResponse;
     try {
-        const response = await axios.get(apiUrl);
+        const response = await axios.get(apiUrl, {
+            headers: {
+                Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'Accept-Encoding': 'gzip, deflate, br, zstd',
+                'Accept-Language': 'en,de;q=0.9,de-DE;q=0.8,en-US;q=0.7',
+                'Upgrade-Insecure-Requests': '1',
+                'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
+                Referer: 'https://www.islamicfinder.org/',
+            },
+        });
         apiResponse = (await response.data) as IslamicFinderApiResponse;
     } catch (error) {
-        console.error('Gagal mengambil data dari API IslamicFinder:', error);
+        strapi.log.error('Gagal mengambil data dari API IslamicFinder:', error);
         return apiResponse;
     }
 
-    //store the data into cache
-    try {
-        await fs.mkdir(CACHE_DIR, { recursive: true }); // create a directory if not exist
-        await fs.writeFile(
-            cacheFilePath,
-            JSON.stringify(apiResponse, null, 2),
-            'utf-8'
-        );
-        console.log(
-            `CACHE SAVED: Data untuk ${cacheKey} telah disimpan di ${cacheFilePath}`
-        );
-    } catch (error) {
-        console.error('Gagal menyimpan data ke cache:', error);
+    if (DRIVE_CACHE_FOLDER_ID) {
+        try {
+            await driveCache.write(
+                DRIVE_CACHE_FOLDER_ID,
+                cacheFileName,
+                apiResponse,
+            );
+            strapi.log.info(
+                `CACHE SAVED (Drive): Data untuk ${cacheFileName} telah disimpan ke Google Drive.`,
+            );
+        } catch (error) {
+            strapi.log.error('Gagal menyimpan data ke Google Drive:', error);
+        }
     }
 
     return apiResponse;
@@ -152,7 +171,7 @@ const getHijriahDatesByMonth = async (
 
 const getPrayingTime = async (
     month: number,
-    year: number
+    year: number,
 ): Promise<NocoDBPrayingTimeResponse> => {
     const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
     const tableId = isLeapYear
@@ -172,7 +191,7 @@ const getPrayingTime = async (
         });
         apiResponse = (await response.data) as NocoDBPrayingTimeResponse;
     } catch (error) {
-        console.error('Gagal mengambil data dari API IslamicFinder:', error);
+        strapi.log.error('Gagal mengambil data dari API IslamicFinder:', error);
 
         return apiResponse;
     }
@@ -200,7 +219,7 @@ const getResponseData = (data) => {
 
 const pickProperties = <T, K extends keyof T>(
     obj: T,
-    keys: K[]
+    keys: K[],
 ): Pick<T, K> => {
     return keys.reduce(
         (acc, key) => {
@@ -209,6 +228,6 @@ const pickProperties = <T, K extends keyof T>(
             }
             return acc;
         },
-        {} as Pick<T, K>
+        {} as Pick<T, K>,
     );
 };

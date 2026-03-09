@@ -22,6 +22,7 @@
         "@strapi/strapi": "5.37.1",
         "axios": "^1.10.0",
         "fs-extra": "^10.0.0",
+        "googleapis": "^171.4.0",
         "mime-types": "^2.1.27",
         "mysql2": "3.9.8",
         "react": "^18.0.0",
