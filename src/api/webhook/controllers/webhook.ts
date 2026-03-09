@@ -44,7 +44,7 @@ const verifyIpn = async (rawBody: string) => {
             timeout: 8000,
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         });
-        console.log(res);
+
         return res.data === 'VERIFIED';
     } catch (err) {
         strapi.log.error(
@@ -118,7 +118,7 @@ export default {
         let totalPrice = 0;
         let donationCode: string | undefined;
 
-        if (isOrderBased) {
+        if (isOrderBased && body.custom) {
             captureId = body.custom;
             totalPrice = parseFloat(body.mc_gross_1 || '0');
             donationCode = body.item_name1;
@@ -129,6 +129,8 @@ export default {
             totalPrice = gross - fee;
             donationCode = body.memo;
         }
+
+        console.log({ txnId, captureId, isOrderBased });
 
         if (!captureId) {
             strapi.log.warn('[paypal-webhook] Missing capture_id', body);
