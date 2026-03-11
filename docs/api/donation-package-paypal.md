@@ -37,9 +37,10 @@ Validation rules:
 - `unique_code` non-empty string.
 - `total_order` number `> 0`.
 - `total_price` number `> 0`.
+- `description` optional string.
 - Header totals must match item totals:
-- `total_order === sum(items.total_order)`
-- `total_price === sum(items.total_price)`
+- `total_order === sum(items.total_order)`.
+- `total_price === sum(items.total_price)`.
 
 Success response example:
 
@@ -157,8 +158,8 @@ Success response example:
 
 - Frontend sends `total_price` as net donation target.
 - Backend reads fee config from `payment-config.paypal`:
-- `fixFee` (minor unit, example: `35` = `0.35`).
-- `percentageFee` (basis points, example: `249` = `2.49%`).
+- `fixFee` in currency units (example: `0.35` means `0.35` in current currency).
+- `percentageFee` in percent (example: `2.49` means `2.49%`).
 - Backend computes:
 - `grossAmount = ceil((netAmount + fixedFee) / (1 - percentageRate), 2 decimals)`.
 - `feeAmount = grossAmount - netAmount`.
@@ -177,11 +178,21 @@ Success response example:
 
 ## Data Persistence to NocoDB
 
-Current implementation inserts one row per donation item with fields:
+Current implementation writes pending rows at order creation and marks them completed at capture.
+
+Pending row fields per donation item:
 - `capture_id`
 - `donation_code`
 - `total_order`
 - `total_price`
+- `description`
+- `is_completed` (false on create)
+- `transaction_id` (empty on create)
 
-If your NocoDB table has additional required fields, update the mapping in:
-- `src/api/donation-package/services/donation-package.ts`
+Capture step updates rows with:
+- `is_completed = 1`
+- `transaction_id = <paypal capture id>`
+
+If your NocoDB table has additional required fields, update mappings in:
+- `src/api/donation-package/services/donation-package.repository.ts`
+- `src/api/donation-package/services/donation-package-paypal.service.ts`

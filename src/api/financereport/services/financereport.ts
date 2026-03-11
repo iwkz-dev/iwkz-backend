@@ -18,8 +18,9 @@ import {
 } from '../controllers/types';
 
 type DonationPackageRecord = {
-    total_order?: number | null;
-    total_price?: number | null;
+    is_completed?: number | 0;
+    total_order?: number | 0;
+    total_price?: number | 0;
 };
 
 const API_URL = `${process.env.IWKZ_NOCODB_API}/`;
@@ -245,10 +246,15 @@ const getDonationPackageStatistics = async (
         )) as DonationPackageRecord[];
 
         return result.reduce(
-            (acc, curr) => ({
-                totalOrder: acc.totalOrder + curr.total_order,
-                totalPrice: acc.totalPrice + curr.total_price,
-            }),
+            (acc, curr) => {
+                if (curr.is_completed === 0) {
+                    return acc; // skip incomplete donation packages
+                }
+                return {
+                    totalOrder: acc.totalOrder + curr.total_order,
+                    totalPrice: acc.totalPrice + curr.total_price,
+                };
+            },
             { totalOrder: 0, totalPrice: 0 },
         );
     } catch (error) {

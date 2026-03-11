@@ -8,6 +8,7 @@ This project contains several custom routes in addition to default Strapi CRUD r
 ## Donation Package
 
 Source:
+- `src/api/donation-package/routes/donation-package.ts` (core route)
 - `src/api/donation-package/routes/custom-donation-package.ts`
 
 Endpoints:
@@ -22,8 +23,9 @@ Detailed docs:
 Behavior:
 - `GET /donation-package` returns package-level information.
 - Donation options now live in `donationPackages[].donationItems`.
-- Donation stats are attached per `donationItems[].uniqueCode`.
+- Donation stats are attached per `donationItems[].uniqueCode` as `total_order` and `total_donation`.
 - `POST /donation-package/bank-transfer` stores manual bank transfer donation rows to NocoDB.
+- `POST /donation-package/bank-transfer` supports both `items[]` and backward-compatible single item payload.
 
 ## Jadwal Shalat
 
@@ -40,6 +42,7 @@ Query params:
 Behavior:
 - If `month` and `year` are provided, returns schedule for that month/year.
 - Otherwise returns today's schedule.
+- Hijriah date lookup uses Google Drive read-through cache (see `docs/google-drive-cache.md`).
 
 ## Finance Report
 
@@ -58,5 +61,5 @@ Query params:
 
 ## Notes
 
-- These are custom routes only.
+- This list includes custom routes plus the core `GET /donation-package` route used by the custom controller/service behavior.
 - Default Strapi routes for content types remain available unless restricted by permissions/policies.
