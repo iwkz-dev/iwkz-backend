@@ -51,6 +51,7 @@ export interface DynamicZoneBankTransfer extends Struct.ComponentSchema {
     bankName: Schema.Attribute.String;
     bic: Schema.Attribute.String;
     iban: Schema.Attribute.String;
+    ownerName: Schema.Attribute.String;
   };
 }
 
