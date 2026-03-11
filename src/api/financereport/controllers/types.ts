@@ -89,3 +89,8 @@ export enum FinanceCashFlowType {
     INFLOW = 'inflow',
     OUTFLOW = 'outflow',
 }
+
+export type FinanceDonationPackageStatistics = {
+    totalOrder: number;
+    totalPrice: number;
+};

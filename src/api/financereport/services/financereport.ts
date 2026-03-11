@@ -14,9 +14,11 @@ import {
     DBLedgerData,
     DBFinanceCashFlow,
     DBFinanceClosingBalance,
+    FinanceDonationPackageStatistics,
 } from '../controllers/types';
 
 type DonationPackageRecord = {
+    total_order?: number | null;
     total_price?: number | null;
 };
 
@@ -228,9 +230,9 @@ const sendGetRequest = async (apiUri: string) => {
     return data;
 };
 
-const getDonationPackageTotalPrice = async (
+const getDonationPackageStatistics = async (
     donationCode: string,
-): Promise<number> => {
+): Promise<FinanceDonationPackageStatistics> => {
     const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_DONATIONPACKAGE}/records?where=(donation_code,eq,${encodeURIComponent(
         donationCode,
     )})&${DEFAULT_DATA_LIMIT}`;
@@ -242,13 +244,16 @@ const getDonationPackageTotalPrice = async (
             apiUri,
         )) as DonationPackageRecord[];
 
-        return result.reduce((total, { total_price }) => {
-            const price = Number(total_price) || 0;
-            return total + price;
-        }, 0);
+        return result.reduce(
+            (acc, curr) => ({
+                totalOrder: acc.totalOrder + curr.total_order,
+                totalPrice: acc.totalPrice + curr.total_price,
+            }),
+            { totalOrder: 0, totalPrice: 0 },
+        );
     } catch (error) {
         strapi.log.error(error);
-        return 0;
+        return { totalOrder: 0, totalPrice: 0 };
     }
 };
 
@@ -257,5 +262,5 @@ export {
     getPRSReport,
     getLedger,
     getBalanceSummaries,
-    getDonationPackageTotalPrice,
+    getDonationPackageStatistics,
 };

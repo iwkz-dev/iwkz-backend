@@ -11,7 +11,7 @@ import {
 import {
     getBalanceSummaries,
     getPRSReport,
-    getDonationPackageTotalPrice,
+    getDonationPackageStatistics,
 } from '../../financereport/services/financereport';
 
 const DONATION_PACKAGE_PRS_CODE = 'iwkz_prs';
@@ -43,12 +43,15 @@ const prsProgressService = ({ strapi }: { strapi: Core.Strapi }) => ({
             const currentYear = new Date().getFullYear();
             const currentDonation = await sumPRSYear(currentYear);
             const currentBalance = await getBalanceSummaries(currentYear);
-            const donationPackageTotalPrice =
-                await getDonationPackageTotalPrice(DONATION_PACKAGE_PRS_CODE); // paypal real time donation for prs
+            const donationPackageStatic = await getDonationPackageStatistics(
+                DONATION_PACKAGE_PRS_CODE,
+            ); // paypal real time donation for prs
 
             const prsCurrentBalance =
                 currentBalance[FinanceReportType.PRS].lastyearIncomeBalance ||
                 0;
+            const donationPackageTotalPrice =
+                donationPackageStatic.totalPrice || 0;
 
             strapi.log.info(
                 JSON.stringify({
