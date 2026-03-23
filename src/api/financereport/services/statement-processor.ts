@@ -327,19 +327,17 @@ export const createStatementProcessor = ({ strapi }: { strapi: any }) => ({
                 }
 
                 return {
-                    steuer: 1,
-                    desc: cleanedDescription,
-                    kategorien: ledgerInformation.kategorien,
-                    sachkonten: ledgerInformation.ledgerId,
-                    bemerkung: ledgerInformation.bemerkung,
-                    soll: isIncome ? 0 : toNegativeAmount(amount),
-                    haben: isIncome ? amount : 0,
-                    datum: transaction.date,
-                    year,
-                    month,
                     lz: monthLabel,
+                    datum: transaction.date,
+                    haben: isIncome ? amount : 0,
+                    soll: isIncome ? 0 : toNegativeAmount(amount),
+                    steuer: 1,
+                    sachkonten: ledgerInformation.ledgerId,
+                    kategorien: ledgerInformation.kategorien,
                     einnahme: isIncome ? 'x' : '',
                     ausgabe: isIncome ? '' : 'x',
+                    bemerkung: ledgerInformation.bemerkung,
+                    desc: cleanedDescription,
                 };
             },
         );
