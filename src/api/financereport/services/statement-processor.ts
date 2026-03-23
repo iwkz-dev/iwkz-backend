@@ -60,9 +60,6 @@ const toNegativeAmount = (value: number) => {
 const toCurrencyNumber = (value: unknown) =>
     Number((Number(value || 0) || 0).toFixed(2));
 
-const toCurrencyString = (value: unknown) =>
-    (Number(value || 0) || 0).toFixed(2);
-
 const createWordBoundaryRegex = (phrase: string) =>
     new RegExp(`(^|[^a-z0-9])${escapeRegExp(phrase)}([^a-z0-9]|$)`, 'i');
 
@@ -350,13 +347,13 @@ export const createStatementProcessor = ({ strapi }: { strapi: any }) => ({
         const transactionsSaveToDb = transactions.map((transaction: any) => {
             const outcome =
                 transaction.ausgabe === 'x'
-                    ? toCurrencyString(transaction.soll)
-                    : '0.00';
+                    ? toCurrencyNumber(transaction.soll)
+                    : 0;
 
             const income =
                 transaction.einnahme === 'x'
-                    ? toCurrencyString(transaction.haben)
-                    : '0.00';
+                    ? toCurrencyNumber(transaction.haben)
+                    : 0;
             return {
                 year: transaction.year,
                 month: Number(transaction.month),
@@ -394,8 +391,8 @@ export const createStatementProcessor = ({ strapi }: { strapi: any }) => ({
                     getDateParts(payload.date, '.').year,
             ),
             month: Number(transactionCashflow.month ?? 0),
-            income: toCurrencyString(transactionCashflow.income),
-            outcome: toCurrencyString(transactionCashflow.outcome * -1),
+            income: toCurrencyNumber(transactionCashflow.income),
+            outcome: toCurrencyNumber(transactionCashflow.outcome),
         };
 
         strapi.log.info(
