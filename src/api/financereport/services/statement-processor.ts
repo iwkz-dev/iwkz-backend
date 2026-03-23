@@ -392,7 +392,7 @@ export const createStatementProcessor = ({ strapi }: { strapi: any }) => ({
             ),
             month: Number(transactionCashflow.month ?? 0),
             income: toCurrencyNumber(transactionCashflow.income),
-            outcome: toCurrencyNumber(transactionCashflow.outcome),
+            outcome: toCurrencyNumber(transactionCashflow.outcome) * -1,
         };
 
         strapi.log.info(
