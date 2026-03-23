@@ -36,5 +36,14 @@ export default {
                 middlewares: [],
             },
         },
+        {
+            method: 'POST',
+            path: '/financereport/process-statement',
+            handler: 'financereport.processStatement',
+            config: {
+                policies: [],
+                middlewares: [],
+            },
+        },
     ],
 };
