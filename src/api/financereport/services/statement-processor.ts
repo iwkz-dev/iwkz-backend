@@ -338,6 +338,8 @@ export const createStatementProcessor = ({ strapi }: { strapi: any }) => ({
                     ausgabe: isIncome ? '' : 'x',
                     bemerkung: ledgerInformation.bemerkung,
                     desc: cleanedDescription,
+                    year,
+                    month,
                 };
             },
         );
