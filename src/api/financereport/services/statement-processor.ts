@@ -52,8 +52,16 @@ const getDateParts = (date: string, separator: string) => {
     };
 };
 
-const formatAmount = (value: unknown) =>
-    Math.abs(Number(value || 0)).toFixed(2);
+const toNegativeAmount = (value: number) => {
+    const normalizedValue = Math.abs(Number(value) || 0);
+    return normalizedValue === 0 ? 0 : normalizedValue * -1;
+};
+
+const toCurrencyNumber = (value: unknown) =>
+    Number((Number(value || 0) || 0).toFixed(2));
+
+const toCurrencyString = (value: unknown) =>
+    (Number(value || 0) || 0).toFixed(2);
 
 const createWordBoundaryRegex = (phrase: string) =>
     new RegExp(`(^|[^a-z0-9])${escapeRegExp(phrase)}([^a-z0-9]|$)`, 'i');
@@ -327,7 +335,7 @@ export const createStatementProcessor = ({ strapi }: { strapi: any }) => ({
                     kategorien: ledgerInformation.kategorien,
                     sachkonten: ledgerInformation.ledgerId,
                     bemerkung: ledgerInformation.bemerkung,
-                    soll: isIncome ? 0 : amount,
+                    soll: isIncome ? 0 : toNegativeAmount(amount),
                     haben: isIncome ? amount : 0,
                     datum: transaction.date,
                     year,
@@ -342,18 +350,18 @@ export const createStatementProcessor = ({ strapi }: { strapi: any }) => ({
         const transactionsSaveToDb = transactions.map((transaction: any) => {
             const outcome =
                 transaction.ausgabe === 'x'
-                    ? formatAmount(transaction.soll)
+                    ? toCurrencyString(transaction.soll)
                     : '0.00';
 
             const income =
                 transaction.einnahme === 'x'
-                    ? formatAmount(transaction.haben)
+                    ? toCurrencyString(transaction.haben)
                     : '0.00';
             return {
                 year: transaction.year,
                 month: Number(transaction.month),
                 date: transaction.datum,
-                outcome: Number(outcome) < 0 ? `-${outcome}` : outcome,
+                outcome,
                 income,
                 ledger_id: transaction.sachkonten,
             };
@@ -380,6 +388,16 @@ export const createStatementProcessor = ({ strapi }: { strapi: any }) => ({
             {},
         );
 
+        const normalizedTransactionCashflow = {
+            year: Number(
+                transactionCashflow.year ??
+                    getDateParts(payload.date, '.').year,
+            ),
+            month: Number(transactionCashflow.month ?? 0),
+            income: toCurrencyString(transactionCashflow.income),
+            outcome: toCurrencyString(transactionCashflow.outcome * -1),
+        };
+
         strapi.log.info(
             `[statement-processor] Processing statement finished. recordedMonths=${recordedMonths.join(',')}, transactions=${transactions.length}, transactionsSaveToDb=${transactionsSaveToDb.length}`,
         );
@@ -390,7 +408,7 @@ export const createStatementProcessor = ({ strapi }: { strapi: any }) => ({
             recorded_months: recordedMonths,
             transactions,
             transactionsSaveToDb,
-            transactionCashflow,
+            transactionCashflow: normalizedTransactionCashflow,
         };
     },
 });
