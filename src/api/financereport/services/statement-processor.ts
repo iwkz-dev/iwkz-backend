@@ -360,21 +360,19 @@ export const createStatementProcessor = ({ strapi }: { strapi: any }) => ({
         });
 
         const transactionCashflow = transactions.reduce(
-            (acc: Record<string, any>, transaction: any) => {
-                const key = `${transaction.year}-${transaction.month}`;
-                if (!acc[key]) {
-                    acc[key] = {
+            (acc: any, transaction: any) => {
+                if (!acc.hasOwnProperty('year')) {
+                    acc = {
                         year: transaction.year,
                         month: Number(transaction.month),
                         income: 0,
                         outcome: 0,
-                        data_type: payload.document_type || 'unknown',
                     };
                 }
-                acc[key].income += Number(
+                acc.income += Number(
                     transaction.einnahme === 'x' ? transaction.haben : 0,
                 );
-                acc[key].outcome += Number(
+                acc.outcome += Number(
                     transaction.ausgabe === 'x' ? transaction.soll : 0,
                 );
                 return acc;
