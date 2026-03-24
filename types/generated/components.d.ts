@@ -138,6 +138,7 @@ export interface DynamicZonePaypalConfig extends Struct.ComponentSchema {
   attributes: {
     cancelUrl: Schema.Attribute.String;
     fixFee: Schema.Attribute.Decimal;
+    paypalAddress: Schema.Attribute.Component<'shared.paypal-address', true>;
     percentageFee: Schema.Attribute.Decimal;
     returnUrl: Schema.Attribute.String;
   };
@@ -196,6 +197,17 @@ export interface SharedLink extends Struct.ComponentSchema {
   };
 }
 
+export interface SharedPaypalAddress extends Struct.ComponentSchema {
+  collectionName: 'components_shared_paypal_addresses';
+  info: {
+    displayName: 'PaypalAddress';
+  };
+  attributes: {
+    address: Schema.Attribute.String;
+    title: Schema.Attribute.String;
+  };
+}
+
 export interface SharedSeo extends Struct.ComponentSchema {
   collectionName: 'components_shared_seos';
   info: {
@@ -227,6 +239,7 @@ declare module '@strapi/strapi' {
       'global.footer': GlobalFooter;
       'global.navbar': GlobalNavbar;
       'shared.link': SharedLink;
+      'shared.paypal-address': SharedPaypalAddress;
       'shared.seo': SharedSeo;
     }
   }
