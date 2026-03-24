@@ -1,0 +1,17 @@
+{
+  "collectionName": "components_shared_paypal_addresses",
+  "info": {
+    "displayName": "PaypalAddress"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string",
+      "required": false
+    }
+  },
+  "config": {}
+}

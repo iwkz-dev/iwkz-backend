@@ -16,6 +16,11 @@
     },
     "percentageFee": {
       "type": "decimal"
+    },
+    "paypalAddress": {
+      "type": "component",
+      "component": "shared.paypal-address",
+      "repeatable": true
     }
   },
   "config": {}
