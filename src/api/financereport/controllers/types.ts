@@ -78,6 +78,7 @@ export type FinanceMonthlySummary = {
 export type FinanceLedgerData = {
     ledgerId: number;
     total: number;
+    ledgerName: string;
 };
 
 export enum FinanceReportType {

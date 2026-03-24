@@ -10,5 +10,14 @@ export default {
                 middlewares: [],
             },
         },
+        {
+            method: 'POST',
+            path: '/webhook/publish-dashboard-update',
+            handler: 'webhook.publishDashboardUpdate',
+            config: {
+                policies: [],
+                middlewares: [],
+            },
+        },
     ],
 };

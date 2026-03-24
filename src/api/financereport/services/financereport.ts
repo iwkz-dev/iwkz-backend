@@ -18,9 +18,15 @@ import {
 } from '../controllers/types';
 
 type DonationPackageRecord = {
+    CreatedAt?: string | null;
     is_completed?: number | 0;
     total_order?: number | 0;
     total_price?: number | 0;
+};
+
+type DonationPackageStatisticsFilter = {
+    year?: number;
+    month?: number;
 };
 
 const API_URL = `${process.env.IWKZ_NOCODB_API}/`;
@@ -54,7 +60,7 @@ const getOperationalReport = async (
     try {
         const result = (await sendGetRequest(apiUri)) as DBFinanceData[];
 
-        monthlyData = evaluateMonthlyData(result);
+        monthlyData = await evaluateMonthlyData(result);
     } catch (error) {
         strapi.log.error(error);
     }
@@ -79,7 +85,7 @@ const getPRSReport = async (
     try {
         const result = (await sendGetRequest(apiUri)) as DBFinanceData[];
 
-        monthlyData = evaluateMonthlyData(result);
+        monthlyData = await evaluateMonthlyData(result);
     } catch (error) {
         strapi.log.error(error);
     }
@@ -156,8 +162,11 @@ const getClosingBalanceValue = (
     return closingBalanceData.total_income || 0;
 };
 
-const evaluateMonthlyData = (data: DBFinanceData[]): FinanceMonthlyData[] => {
+const evaluateMonthlyData = async (
+    data: DBFinanceData[],
+): Promise<FinanceMonthlyData[]> => {
     const monthlyDataMap = new Map<number, FinanceMonthlyData>();
+    const ledgerNameById = await createLedgerNameMap();
 
     data.forEach(({ month, ledger_id, income, outcome }) => {
         if (income === null) income = 0;
@@ -189,15 +198,27 @@ const evaluateMonthlyData = (data: DBFinanceData[]): FinanceMonthlyData[] => {
         if (ledgerIndex >= 0) {
             monthData[cashFlowType].ledgerData[ledgerIndex].total += total;
         } else {
+            const ledgerName =
+                ledger_id === 0 ? '-' : ledgerNameById[ledger_id];
+
             monthData[cashFlowType].ledgerData.push({
                 ledgerId: ledger_id,
                 total,
+                ledgerName,
             });
         }
     });
 
     return Array.from(monthlyDataMap.values()).sort(
         (a, b) => a.month - b.month,
+    );
+};
+
+const createLedgerNameMap = async (): Promise<Record<number, string>> => {
+    const ledgerData = (await getLedger()) ?? [];
+
+    return Object.fromEntries(
+        ledgerData.map(({ ledger_id, label }) => [ledger_id, label ?? '-']),
     );
 };
 
@@ -231,28 +252,64 @@ const sendGetRequest = async (apiUri: string) => {
     return data;
 };
 
+const matchesDonationPackageDateFilter = (
+    record: DonationPackageRecord,
+    filter?: DonationPackageStatisticsFilter,
+) => {
+    if (!filter?.year && !filter?.month) {
+        return true;
+    }
+
+    if (!record.CreatedAt) {
+        return false;
+    }
+
+    const createdAt = new Date(record.CreatedAt);
+
+    if (Number.isNaN(createdAt.getTime())) {
+        return false;
+    }
+
+    const matchesYear = filter.year
+        ? createdAt.getUTCFullYear() === filter.year
+        : true;
+    const matchesMonth = filter.month
+        ? createdAt.getUTCMonth() + 1 === filter.month
+        : true;
+
+    return matchesYear && matchesMonth;
+};
+
 const getDonationPackageStatistics = async (
     donationCode: string,
+    filter?: DonationPackageStatisticsFilter,
 ): Promise<FinanceDonationPackageStatistics> => {
     const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_DONATIONPACKAGE}/records?where=(donation_code,eq,${encodeURIComponent(
         donationCode,
     )})&${DEFAULT_DATA_LIMIT}`;
 
-    strapi.log.info(`apiUri: ${apiUri}`);
+    strapi.log.info(
+        `[getDonationPackageStatistics] apiUri=${apiUri}, filter=${JSON.stringify(
+            filter ?? {},
+        )}`,
+    );
 
     try {
         const result = (await sendGetRequest(
             apiUri,
         )) as DonationPackageRecord[];
+        const filteredResult = result.filter((record) =>
+            matchesDonationPackageDateFilter(record, filter),
+        );
 
-        return result.reduce(
+        return filteredResult.reduce(
             (acc, curr) => {
                 if (curr.is_completed === 0) {
                     return acc; // skip incomplete donation packages
                 }
                 return {
-                    totalOrder: acc.totalOrder + curr.total_order,
-                    totalPrice: acc.totalPrice + curr.total_price,
+                    totalOrder: acc.totalOrder + (curr.total_order ?? 0),
+                    totalPrice: acc.totalPrice + (curr.total_price ?? 0),
                 };
             },
             { totalOrder: 0, totalPrice: 0 },

@@ -75,7 +75,23 @@ const updateIsCompleted = async (row: any) => {
     });
 };
 
+const triggerDashboardUpdate = () => {
+    void strapi.broadcastDashboardData?.().catch((error) => {
+        strapi.log.error('Failed to broadcast dashboard data', error);
+    });
+};
+
 export default {
+    async publishDashboardUpdate(ctx) {
+        await strapi.broadcastDashboardData();
+
+        ctx.status = 200;
+        ctx.body = {
+            status: 'ok',
+            action: 'dashboard_update_triggered',
+        };
+        return;
+    },
     async paypal(ctx) {
         const rawBody = getRawBody(ctx);
         const body = ctx.request.body || {};
@@ -147,8 +163,6 @@ export default {
             is_completed: 1,
         };
 
-        console.log({ payload, body });
-
         try {
             const existing = await findExisting(captureId);
 
@@ -160,12 +174,20 @@ export default {
                 }
 
                 await updateIsCompleted(existing);
+
+                //fire and forget, we don't want to block the webhook response
+                triggerDashboardUpdate();
+
                 ctx.status = 200;
                 ctx.body = { status: 'ok', action: 'updated' };
                 return;
             }
 
             await createRecord(payload);
+
+            //fire and forget, we don't want to block the webhook response
+            triggerDashboardUpdate();
+
             ctx.status = 200;
             ctx.body = { status: 'ok', action: 'created' };
         } catch (err) {
