@@ -1,48 +1,50 @@
 {
-    "name": "iwkz-backend",
-    "version": "0.1.0",
-    "private": true,
-    "description": "IWKZ API built with Strapi",
-    "scripts": {
-        "build": "strapi build",
-        "console": "strapi console",
-        "deploy": "strapi deploy",
-        "dev": "strapi develop",
-        "develop": "strapi develop",
-        "start": "strapi start",
-        "strapi": "strapi",
-        "upgrade": "npx @strapi/upgrade latest",
-        "upgrade:dry": "npx @strapi/upgrade latest --dry"
-    },
-    "dependencies": {
-        "@strapi/plugin-cloud": "5.37.1",
-        "@strapi/plugin-users-permissions": "5.37.1",
-        "@strapi/provider-email-nodemailer": "^5.17.0",
-        "@strapi/provider-upload-cloudinary": "^5.17.0",
-        "@strapi/strapi": "5.37.1",
-        "axios": "^1.10.0",
-        "fs-extra": "^10.0.0",
-        "googleapis": "^171.4.0",
-        "mime-types": "^2.1.27",
-        "mysql2": "3.9.8",
-        "react": "^18.0.0",
-        "react-dom": "^18.0.0",
-        "react-router-dom": "^6.0.0",
-        "socket.io": "^4.8.3",
-        "styled-components": "^6.0.0"
-    },
-    "devDependencies": {
-        "@types/node": "^20",
-        "@types/react": "^18",
-        "@types/react-dom": "^18",
-        "typescript": "^5"
-    },
-    "engines": {
-        "node": ">=18.0.0 <=22.x.x",
-        "npm": ">=6.0.0"
-    },
-    "strapi": {
-        "uuid": "92607cc6-96b6-421a-a688-9c8241619c45",
-        "installId": "81f351fc412e58796a153aefef15ae5b5d57ad2b43c7a41dffdef30fef405666"
-    }
+  "name": "iwkz-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "IWKZ API built with Strapi",
+  "scripts": {
+    "build": "strapi build",
+    "console": "strapi console",
+    "deploy": "strapi deploy",
+    "dev": "strapi develop",
+    "develop": "strapi develop",
+    "start": "strapi start",
+    "strapi": "strapi",
+    "upgrade": "npx @strapi/upgrade latest",
+    "upgrade:dry": "npx @strapi/upgrade latest --dry",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@strapi/plugin-cloud": "5.37.1",
+    "@strapi/plugin-users-permissions": "5.37.1",
+    "@strapi/provider-email-nodemailer": "^5.17.0",
+    "@strapi/provider-upload-cloudinary": "^5.17.0",
+    "@strapi/strapi": "5.37.1",
+    "axios": "^1.10.0",
+    "fs-extra": "^10.0.0",
+    "googleapis": "^171.4.0",
+    "mime-types": "^2.1.27",
+    "mysql2": "3.9.8",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-router-dom": "^6.0.0",
+    "socket.io": "^4.8.3",
+    "styled-components": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0 <=22.x.x",
+    "npm": ">=6.0.0"
+  },
+  "strapi": {
+    "uuid": "92607cc6-96b6-421a-a688-9c8241619c45",
+    "installId": "81f351fc412e58796a153aefef15ae5b5d57ad2b43c7a41dffdef30fef405666"
+  }
 }

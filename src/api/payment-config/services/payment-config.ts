@@ -4,4 +4,6 @@
 
 import { factories } from '@strapi/strapi';
 
-export default factories.createCoreService('api::payment-config.payment-config');
+export default factories.createCoreService(
+  'api::payment-config.payment-config'
+);

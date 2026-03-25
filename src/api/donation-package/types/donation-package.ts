@@ -1,157 +1,157 @@
 export interface DonationDonationItem {
-    title?: string;
-    price?: number | string;
-    uniqueCode?: string;
-    targetDonation?: number | string | null;
-    total_order?: number;
-    total_donation?: number;
-    [key: string]: unknown;
+  title?: string;
+  price?: number | string;
+  uniqueCode?: string;
+  targetDonation?: number | string | null;
+  total_order?: number;
+  total_donation?: number;
+  [key: string]: unknown;
 }
 
 export interface DonationPackageItem {
-    title?: string;
-    description?: string;
-    published?: boolean;
-    endDate?: string | null;
-    donationItems?: DonationDonationItem[] | null;
-    [key: string]: unknown;
+  title?: string;
+  description?: string;
+  published?: boolean;
+  endDate?: string | null;
+  donationItems?: DonationDonationItem[] | null;
+  [key: string]: unknown;
 }
 
 export interface DonationPackageEntity {
-    donationPackages?: DonationPackageItem[];
-    [key: string]: unknown;
+  donationPackages?: DonationPackageItem[];
+  [key: string]: unknown;
 }
 
 export interface DonationStats {
-    total_order: number;
-    total_donation: number;
+  total_order: number;
+  total_donation: number;
 }
 
 export interface NocoDonationRecord {
-    capture_id?: string;
-    donation_code?: string;
-    total_order?: number | string;
-    total_price?: number | string;
-    description?: string;
-    is_completed?: boolean;
-    transaction_id?: string;
-    id?: string | number;
-    updated_at?: string;
-    created_at?: string;
+  capture_id?: string;
+  donation_code?: string;
+  total_order?: number | string;
+  total_price?: number | string;
+  description?: string;
+  is_completed?: boolean;
+  transaction_id?: string;
+  id?: string | number;
+  CreatedAt?: string;
+  UpdatedAt?: string;
 }
 
 export interface NocoDonationResponse {
-    list?: NocoDonationRecord[];
+  list?: NocoDonationRecord[];
 }
 
 export class PaypalPaymentItemInput {
-    unique_code!: string;
-    total_order!: number;
-    total_price!: number;
-    description?: string;
+  unique_code!: string;
+  total_order!: number;
+  total_price!: number;
+  description?: string;
 }
 
 export class CreatePaypalPaymentInput {
-    total_order!: number;
-    total_price!: number;
-    items!: PaypalPaymentItemInput[];
+  total_order!: number;
+  total_price!: number;
+  items!: PaypalPaymentItemInput[];
 }
 
 export class CreatePaypalPaymentBody {
+  total_order?: number | string;
+  total_price?: number | string;
+  items?: Array<{
+    unique_code?: string;
     total_order?: number | string;
     total_price?: number | string;
-    items?: Array<{
-        unique_code?: string;
-        total_order?: number | string;
-        total_price?: number | string;
-        description?: string;
-    }>;
+    description?: string;
+  }>;
 }
 
 export interface PaypalAccessTokenResponse {
-    access_token: string;
+  access_token: string;
 }
 
 export interface PaypalOrderResponse {
-    id: string;
-    links?: Array<{
-        rel?: string;
-        href?: string;
-    }>;
+  id: string;
+  links?: Array<{
+    rel?: string;
+    href?: string;
+  }>;
 }
 
 export class PaypalPaymentLinkResponse {
-    orderId!: string;
-    approvalUrl!: string;
-    netAmount!: number;
-    grossAmount!: number;
-    feeAmount!: number;
+  orderId!: string;
+  approvalUrl!: string;
+  netAmount!: number;
+  grossAmount!: number;
+  feeAmount!: number;
 }
 
 export class CapturePaypalPaymentBody {
-    order_id?: string;
-    token?: string;
+  order_id?: string;
+  token?: string;
 }
 
 export class CapturePaypalPaymentInput {
-    order_id!: string;
+  order_id!: string;
 }
 
 export class CreateBankTransferDonationBody {
+  donation_code?: string;
+  total_order?: number | string;
+  total_price?: number | string;
+  description?: string;
+  items?: Array<{
     donation_code?: string;
     total_order?: number | string;
     total_price?: number | string;
     description?: string;
-    items?: Array<{
-        donation_code?: string;
-        total_order?: number | string;
-        total_price?: number | string;
-        description?: string;
-    }>;
+  }>;
 }
 
 export class BankTransferDonationItemInput {
-    donation_code!: string;
-    total_order!: number;
-    total_price!: number;
-    description?: string;
+  donation_code!: string;
+  total_order!: number;
+  total_price!: number;
+  description?: string;
 }
 
 export class CreateBankTransferDonationInput {
-    items!: BankTransferDonationItemInput[];
+  items!: BankTransferDonationItemInput[];
 }
 
 export interface PaypalCapture {
-    id?: string;
-    status?: string;
-    custom_id?: string;
-    amount?: {
-        value?: string;
-        currency_code?: string;
-    };
+  id?: string;
+  status?: string;
+  custom_id?: string;
+  amount?: {
+    value?: string;
+    currency_code?: string;
+  };
 }
 
 export interface PaypalCaptureOrderResponse {
-    id?: string;
-    status?: string;
-    purchase_units?: Array<{
-        custom_id?: string;
-        description?: string;
-        payments?: {
-            captures?: PaypalCapture[];
-        };
-    }>;
+  id?: string;
+  status?: string;
+  purchase_units?: Array<{
+    custom_id?: string;
+    description?: string;
+    payments?: {
+      captures?: PaypalCapture[];
+    };
+  }>;
 }
 
 export interface PaypalConfigEntity {
-    returnUrl?: string;
-    cancelUrl?: string;
-    fixFee?: number | string;
-    percentageFee?: number | string;
-    [key: string]: unknown;
+  returnUrl?: string;
+  cancelUrl?: string;
+  fixFee?: number | string;
+  percentageFee?: number | string;
+  [key: string]: unknown;
 }
 
 export interface PaymentConfigEntity {
-    paypal?: PaypalConfigEntity | null;
-    [key: string]: unknown;
+  paypal?: PaypalConfigEntity | null;
+  [key: string]: unknown;
 }

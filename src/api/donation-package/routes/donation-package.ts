@@ -4,4 +4,6 @@
 
 import { factories } from '@strapi/strapi';
 
-export default factories.createCoreRouter('api::donation-package.donation-package');
+export default factories.createCoreRouter(
+  'api::donation-package.donation-package'
+);

@@ -1,6 +1,7 @@
 # Donation Package PayPal API
 
 Base URL:
+
 - `http://<host>:<port>/api`
 
 All examples below use JSON.
@@ -8,9 +9,11 @@ All examples below use JSON.
 ## 1. Create PayPal Order
 
 Endpoint:
+
 - `POST /donation-package/paypal`
 
 Purpose:
+
 - Accept donation items in net amount.
 - Calculate PayPal gross-up fee in backend using `payment-config`.
 - Create PayPal order and return approval link for frontend redirect.
@@ -30,6 +33,7 @@ Request body:
 ```
 
 Validation rules:
+
 - `total_order` must be `> 0`.
 - `total_price` must be `> 0`.
 - `items` must not be empty.
@@ -64,15 +68,18 @@ Success response example:
 ```
 
 Error responses:
+
 - `400 Bad Request` for payload validation failure.
 - `500 Internal Server Error` for PayPal / config / internal service failure.
 
 ## 2. Capture Approved PayPal Order
 
 Endpoint:
+
 - `POST /donation-package/paypal/capture`
 
 Purpose:
+
 - Capture approved PayPal order.
 - On success, persist donation rows into NocoDB table configured by `IWKZ_NOCODB_TABLE_DONATIONPACKAGE`.
 
@@ -110,15 +117,18 @@ Success response example:
 ```
 
 Error responses:
+
 - `400 Bad Request` when `order_id` and `token` are missing.
 - `500 Internal Server Error` when capture fails or persistence to NocoDB fails.
 
 ## 3. Create Bank Transfer Donation (Admin)
 
 Endpoint:
+
 - `POST /donation-package/bank-transfer`
 
 Purpose:
+
 - Insert manual donation transaction into NocoDB for bank transfer flow.
 
 Request body:
@@ -127,12 +137,17 @@ Request body:
 {
   "items": [
     { "donation_code": "operational", "total_order": 1, "total_price": 100 },
-    { "donation_code": "ramadan1447_iftar", "total_order": 2, "total_price": 30 }
+    {
+      "donation_code": "ramadan1447_iftar",
+      "total_order": 2,
+      "total_price": 30
+    }
   ]
 }
 ```
 
 Validation rules:
+
 - `items` can contain one or more rows.
 - For each item:
 - `donation_code` is required.
@@ -147,7 +162,11 @@ Success response example:
   "data": {
     "items": [
       { "donation_code": "operational", "total_order": 1, "total_price": 100 },
-      { "donation_code": "ramadan1447_iftar", "total_order": 2, "total_price": 30 }
+      {
+        "donation_code": "ramadan1447_iftar",
+        "total_order": 2,
+        "total_price": 30
+      }
     ]
   },
   "meta": {}
@@ -181,6 +200,7 @@ Success response example:
 Current implementation writes pending rows at order creation and marks them completed at capture.
 
 Pending row fields per donation item:
+
 - `capture_id`
 - `donation_code`
 - `total_order`
@@ -190,9 +210,11 @@ Pending row fields per donation item:
 - `transaction_id` (empty on create)
 
 Capture step updates rows with:
+
 - `is_completed = 1`
 - `transaction_id = <paypal capture id>`
 
 If your NocoDB table has additional required fields, update mappings in:
+
 - `src/api/donation-package/services/donation-package.repository.ts`
 - `src/api/donation-package/services/donation-package-paypal.service.ts`

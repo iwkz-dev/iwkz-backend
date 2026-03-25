@@ -14,9 +14,7 @@
     "image": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": [
-        "images"
-      ]
+      "allowedTypes": ["images"]
     },
     "link": {
       "type": "component",
