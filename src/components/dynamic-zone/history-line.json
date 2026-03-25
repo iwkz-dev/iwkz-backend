@@ -17,9 +17,7 @@
     "image": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": [
-        "images"
-      ]
+      "allowedTypes": ["images"]
     }
   },
   "config": {}

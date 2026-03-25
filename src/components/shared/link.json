@@ -14,12 +14,7 @@
     },
     "target": {
       "type": "enumeration",
-      "enum": [
-        "_blank",
-        "_self",
-        "_parent",
-        "_top"
-      ]
+      "enum": ["_blank", "_self", "_parent", "_top"]
     }
   },
   "config": {}

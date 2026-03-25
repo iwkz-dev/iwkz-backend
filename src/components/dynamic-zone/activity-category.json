@@ -17,9 +17,7 @@
     "image": {
       "type": "media",
       "multiple": true,
-      "allowedTypes": [
-        "images"
-      ]
+      "allowedTypes": ["images"]
     },
     "Activities": {
       "type": "component",

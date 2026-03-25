@@ -23,10 +23,7 @@
     "image": {
       "type": "media",
       "multiple": false,
-      "allowedTypes": [
-        "files",
-        "images"
-      ]
+      "allowedTypes": ["files", "images"]
     },
     "donationItems": {
       "type": "component",

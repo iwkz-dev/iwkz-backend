@@ -3,25 +3,25 @@
  */
 
 import {
-    getJadwalShalatByMonthAndYear,
-    getJadwalShalatToday,
+  getJadwalShalatByMonthAndYear,
+  getJadwalShalatToday,
 } from '../services/jadwalshalat';
 
 async function getData(query) {
-    if (query && query.month && query.year) {
-        return await getJadwalShalatByMonthAndYear(query.month, query.year);
-    }
+  if (query && query.month && query.year) {
+    return await getJadwalShalatByMonthAndYear(query.month, query.year);
+  }
 
-    return getJadwalShalatToday();
+  return getJadwalShalatToday();
 }
 
 export default {
-    getData: async (ctx, next) => {
-        try {
-            ctx.body = await getData(ctx.query);
-        } catch (err) {
-            ctx.body = err;
-            ctx.status = 500;
-        }
-    },
+  getData: async (ctx, next) => {
+    try {
+      ctx.body = await getData(ctx.query);
+    } catch (err) {
+      ctx.body = err;
+      ctx.status = 500;
+    }
+  },
 };

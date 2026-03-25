@@ -2,6 +2,8 @@
  * payment-config controller
  */
 
-import { factories } from '@strapi/strapi'
+import { factories } from '@strapi/strapi';
 
-export default factories.createCoreController('api::payment-config.payment-config');
+export default factories.createCoreController(
+  'api::payment-config.payment-config'
+);
