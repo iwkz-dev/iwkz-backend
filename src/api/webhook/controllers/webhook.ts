@@ -1,5 +1,6 @@
 import axios from 'axios';
 import qs from 'querystring';
+import { publishDashboardUpdate, triggerDashboardUpdate } from '../services/dashboard-update';
 
 const NOCODB_BASE = process.env.IWKZ_NOCODB_API || '';
 const NOCODB_TOKEN = process.env.IWKZ_NOCODB_API_TOKEN || '';
@@ -75,15 +76,9 @@ const updateIsCompleted = async (row: any) => {
   });
 };
 
-const triggerDashboardUpdate = () => {
-  void strapi.broadcastDashboardData?.().catch((error) => {
-    strapi.log.error('Failed to broadcast dashboard data', error);
-  });
-};
-
 export default {
   async publishDashboardUpdate(ctx) {
-    await strapi.broadcastDashboardData();
+    await publishDashboardUpdate(strapi);
 
     ctx.status = 200;
     ctx.body = {
@@ -176,7 +171,7 @@ export default {
         await updateIsCompleted(existing);
 
         //fire and forget, we don't want to block the webhook response
-        triggerDashboardUpdate();
+        triggerDashboardUpdate(strapi);
 
         ctx.status = 200;
         ctx.body = { status: 'ok', action: 'updated' };
@@ -186,7 +181,7 @@ export default {
       await createRecord(payload);
 
       //fire and forget, we don't want to block the webhook response
-      triggerDashboardUpdate();
+      triggerDashboardUpdate(strapi);
 
       ctx.status = 200;
       ctx.body = { status: 'ok', action: 'created' };

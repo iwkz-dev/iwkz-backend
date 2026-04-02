@@ -5,6 +5,7 @@ import type {
   NocoDonationResponse,
 } from '../types/donation-package';
 import { toNumber } from './donation-package.utils';
+import { publishDashboardUpdate } from '../../webhook/services/dashboard-update';
 
 export type DonationCaptureItem = {
   unique_code: string;
@@ -189,6 +190,15 @@ export const markDonationCaptureCompletedInNocoDB = async (
             'xc-token': token,
           },
         }
+      );
+    }
+
+    try {
+      await publishDashboardUpdate(strapi);
+    } catch (error) {
+      strapi.log.error(
+        'Donation capture was completed, but dashboard update failed.',
+        error
       );
     }
   } catch (error) {
