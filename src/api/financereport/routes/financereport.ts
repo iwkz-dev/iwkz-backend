@@ -39,7 +39,7 @@ export default {
     {
       method: 'GET',
       path: '/financereport/shalat-jumat',
-      handler: 'financereport.shalatJumatDataController',
+      handler: 'financereport.shalatJumatDonationDataController',
       config: {
         policies: [],
         middlewares: [],

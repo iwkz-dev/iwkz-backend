@@ -6,11 +6,6 @@ import {
   FinanceReportType,
 } from '../controllers/types';
 
-type ShalatJumatDonationRecord = {
-  date: string;
-  total: number;
-};
-
 const DEFAULT_DATA_LIMIT = 'limit=1000';
 
 const getShalatJumatDonation = async (

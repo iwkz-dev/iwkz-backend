@@ -6,6 +6,8 @@ import {
 } from '../controllers/types';
 import { evaluateMonthlyData, sendGetRequest } from './financereport.helper';
 
+const DEFAULT_DATA_LIMIT = 'limit=1000';
+
 const getPRSReport = async (
   year: number,
   month?: number

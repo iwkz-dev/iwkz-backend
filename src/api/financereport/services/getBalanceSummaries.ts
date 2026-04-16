@@ -8,6 +8,8 @@ import {
 } from '../controllers/types';
 import { sendGetRequest } from './financereport.helper';
 
+const DEFAULT_DATA_LIMIT = 'limit=1000';
+
 const getBalanceSummaries = async (
   year: number
 ): Promise<FinanceSummaryApiResponse> => {
