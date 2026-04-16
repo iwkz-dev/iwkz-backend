@@ -27,9 +27,10 @@ const getShalatJumatDonation = async (
   } catch (error) {
     strapi.log.error(error);
   }
+  console.log(monthlyData);
 
   return {
-    year: 123,
+    year,
     type: FinanceReportType.JUMATAN,
     monthlyData,
   };
