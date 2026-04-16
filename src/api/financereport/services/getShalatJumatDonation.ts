@@ -16,7 +16,7 @@ const getShalatJumatDonation = async (
   const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_SHALAT_JUMAT}/records?where=(year,eq,${year})${monthFilter}&${DEFAULT_DATA_LIMIT}`;
 
   strapi.log.info(
-    `[getJumatanWeekly] apiUri=${apiUri}, filter=${JSON.stringify({ year, month })}`
+    `[getShalatJumatDonation] apiUri=${apiUri}, filter=${JSON.stringify({ year, month })}`
   );
   let monthlyData: FinanceMonthlyData[];
 
