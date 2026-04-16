@@ -1,5 +1,6 @@
 import { evaluateMonthlyData, sendGetRequest } from './financereport.helper';
 import {
+  DBFinanceData,
   FinanceDataApiResponse,
   FinanceMonthlyData,
   FinanceReportType,
@@ -25,9 +26,7 @@ const getShalatJumatDonation = async (
   let monthlyData: FinanceMonthlyData[];
 
   try {
-    const result = (await sendGetRequest(
-      apiUri
-    )) as ShalatJumatDonationRecord[];
+    const result = (await sendGetRequest(apiUri)) as DBFinanceData[];
 
     monthlyData = await evaluateMonthlyData(result);
   } catch (error) {
