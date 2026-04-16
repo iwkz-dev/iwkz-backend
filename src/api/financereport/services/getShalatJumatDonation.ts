@@ -1,0 +1,44 @@
+import { evaluateMonthlyData, sendGetRequest } from './financereport.helper';
+import {
+  FinanceDataApiResponse,
+  FinanceMonthlyData,
+  FinanceReportType,
+} from '../controllers/types';
+
+type ShalatJumatDonationRecord = {
+  date: string;
+  total: number;
+};
+
+const DEFAULT_DATA_LIMIT = 'limit=1000';
+
+const getShalatJumatDonation = async (
+  year: number,
+  month?: number
+): Promise<FinanceDataApiResponse> => {
+  const monthFilter = month ? `~and(month,eq,${month}` : '';
+  const apiUri = `tables/${process.env.IWKZ_NOCODB_TABLE_SHALAT_JUMAT}/records?where=(year,eq,${year})${monthFilter}&${DEFAULT_DATA_LIMIT}`;
+
+  strapi.log.info(
+    `[getJumatanWeekly] apiUri=${apiUri}, filter=${JSON.stringify({ year, month })}`
+  );
+  let monthlyData: FinanceMonthlyData[];
+
+  try {
+    const result = (await sendGetRequest(
+      apiUri
+    )) as ShalatJumatDonationRecord[];
+
+    monthlyData = await evaluateMonthlyData(result);
+  } catch (error) {
+    strapi.log.error(error);
+  }
+
+  return {
+    year: 123,
+    type: FinanceReportType.JUMATAN,
+    monthlyData,
+  };
+};
+
+export { getShalatJumatDonation };

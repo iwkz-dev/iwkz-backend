@@ -7,6 +7,7 @@ export type DashboardPayload = {
     currentPrsDonationProgress: unknown | null;
     prsMonthlyReport: unknown | null;
     operationalMonthlyReport: unknown | null;
+    shalatJumatDonationMonthlyReport: unknown | null;
   };
   lastUpdated: string;
 };

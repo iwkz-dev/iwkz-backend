@@ -84,6 +84,7 @@ export type FinanceLedgerData = {
 export enum FinanceReportType {
   PRS = 'prs',
   OPERASIONAL = 'operational',
+  JUMATAN = 'jumatan',
 }
 
 export enum FinanceCashFlowType {
