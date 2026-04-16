@@ -37,6 +37,15 @@ export default {
       },
     },
     {
+      method: 'GET',
+      path: '/financereport/shalat-jumat',
+      handler: 'financereport.shalatJumatDonationDataController',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
       method: 'POST',
       path: '/financereport/process-statement',
       handler: 'financereport.processStatement',

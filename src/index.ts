@@ -7,6 +7,7 @@ import {
   getDonationPackageStatistics,
   getOperationalReport,
   getPRSReport,
+  getShalatJumatDonation,
 } from './api/financereport/services/financereport';
 
 const DASHBOARD_EVENT =
@@ -164,6 +165,7 @@ const createDashboardPayload = async (
     currentOperationalDonationProgress,
     prsReport,
     operationalReport,
+    shalatJumatDonationReport,
     currentPrsDonationProgress,
   ] = await Promise.allSettled([
     getJadwalShalatToday(),
@@ -173,6 +175,7 @@ const createDashboardPayload = async (
     }),
     getPRSReport(year),
     getOperationalReport(year),
+    getShalatJumatDonation(year),
     prsDonationProgressService.getPRSProgressWithCurrentDonation(),
   ]);
 
@@ -199,6 +202,12 @@ const createDashboardPayload = async (
         strapi,
         'Finance - Operational',
         operationalReport
+      ),
+
+      shalatJumatDonationMonthlyReport: getSettledValue(
+        strapi,
+        'Finance - Shalat Jumat Donation',
+        shalatJumatDonationReport
       ),
     },
     lastUpdated: new Date().toISOString(),

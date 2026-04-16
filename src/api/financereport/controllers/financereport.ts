@@ -7,6 +7,7 @@ import {
   getOperationalReport,
   getLedger,
   getBalanceSummaries,
+  getShalatJumatDonation,
 } from '../services/financereport';
 import { createStatementProcessor } from '../services/statement-processor';
 
@@ -97,6 +98,15 @@ const normalizePayload = (body: any) => {
   };
 };
 
+const getShalatJumatDonationData = async (query) => {
+  if (query && query.year) {
+    return await getShalatJumatDonation(query.year);
+  } else {
+    const currentYear = new Date().getFullYear();
+    return await getShalatJumatDonation(currentYear);
+  }
+};
+
 const getPRSData = async (query) => {
   if (query && query.year) {
     return await getPRSReport(query.year);
@@ -125,6 +135,14 @@ const getBalanceSummariesData = async (query) => {
 };
 
 export default {
+  shalatJumatDonationDataController: async (ctx, next) => {
+    try {
+      ctx.body = await getShalatJumatDonationData(ctx.query);
+    } catch (err) {
+      ctx.body = err;
+      ctx.status = 500;
+    }
+  },
   prsDataController: async (ctx, next) => {
     try {
       ctx.body = await getPRSData(ctx.query);
