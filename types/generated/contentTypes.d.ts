@@ -667,6 +667,12 @@ export interface ApiPrsDonationProgressPrsDonationProgress
       'oneToMany',
       'api::prs-donation-progress.prs-donation-progress'
     >;
+    Payments: Schema.Attribute.Component<'shared.payments', true> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false;
+        };
+      }>;
     publishedAt: Schema.Attribute.DateTime;
     subHeadline: Schema.Attribute.Text &
       Schema.Attribute.SetPluginOptions<{

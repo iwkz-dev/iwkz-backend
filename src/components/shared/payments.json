@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_shared_payments",
+  "info": {
+    "displayName": "Payments"
+  },
+  "options": {},
+  "attributes": {
+    "paymentType": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "paymentInfo": {
+      "type": "blocks"
+    }
+  },
+  "config": {}
+}
