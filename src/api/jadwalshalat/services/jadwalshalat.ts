@@ -6,9 +6,11 @@ import axios from 'axios';
 import {
   IslamicFinderApiResponse,
   NocoDBPrayingTimeResponse,
+  PrayingTimeResponse,
   ResponseOutput,
 } from '../controllers/types';
 import { driveCache } from '../../../helpers/googleDriveCache';
+import { addOneHour, isCEST } from '../../../helpers/timezone';
 
 const DRIVE_CACHE_FOLDER_ID = process.env.GOOGLE_DRIVE_CACHE_HIJRIAH_DATE;
 const monthNames = [
@@ -83,7 +85,7 @@ export const getJadwalShalatByMonthAndYear = async (
         hijriahDate,
         hijriahMonth,
         hijriahYear,
-        ...prayingTime,
+        ...adjustPrayingTimeForCEST(prayingTime, day, month, year),
       })
     );
   }
@@ -194,6 +196,34 @@ const getPrayingTime = async (
   }
 
   return apiResponse;
+};
+
+const PRAYING_TIME_KEYS = [
+  'subuh',
+  'terbit',
+  'dzuhur',
+  'ashr',
+  'maghrib',
+  'isya',
+] as const;
+
+// Praying times in NocoDB are stored in CET; shift them by 1 hour during CEST
+const adjustPrayingTimeForCEST = (
+  prayingTime: PrayingTimeResponse | undefined,
+  day: number,
+  month: number,
+  year: number
+): PrayingTimeResponse | undefined => {
+  if (!prayingTime || !isCEST(day, month, year)) {
+    return prayingTime;
+  }
+
+  const adjusted = { ...prayingTime };
+  PRAYING_TIME_KEYS.forEach((key) => {
+    adjusted[key] = addOneHour(prayingTime[key]);
+  });
+
+  return adjusted;
 };
 
 const getResponseData = (data) => {
